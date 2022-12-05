@@ -42,6 +42,8 @@ dependencies {
     implementation(libs.progressbar)
     implementation(libs.kotlin.logging)
     implementation(libs.jackson.dataformat.csv)
+    testImplementation(project(mapOf("path" to ":opendc-experiments:opendc-experiments-workflow")))
+    testImplementation(project(mapOf("path" to ":opendc-experiments:opendc-experiments-workflow")))
 
     runtimeOnly(projects.opendcTrace.opendcTraceOpendc)
     runtimeOnly(libs.log4j.core)

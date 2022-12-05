@@ -20,23 +20,23 @@
  * SOFTWARE.
  */
 
-@file:JvmName("WorkflowSteps")
-
-package org.opendc.experiments.workflow
-
-import org.opendc.experiments.provisioner.ProvisioningStep
-import org.opendc.workflow.service.WorkflowService
-import java.time.Duration
+package org.opendc.workflow.service.scheduler.telemetry
 
 /**
- * Return a [ProvisioningStep] that sets up a [WorkflowService].
+ * Statistics about the workflow scheduler.
+ *
+ * @property workflowsSubmitted The number of workflows submitted to the scheduler.
+ * @property workflowsRunning The number of workflows that are currently running.
+ * @property workflowsFinished The number of workflows that have completed since the scheduler started.
+ * @property tasksSubmitted The number of tasks submitted to the scheduler.
+ * @property tasksRunning The number of tasks that are currently running.
+ * @property tasksFinished The number of tasks that have completed.
  */
-public fun setupWorkflowService(
-    serviceDomain: String,
-    computeService: String,
-    scheduler: WorkflowSchedulerSpec,
-    schedulingQuantum: Duration = Duration.ofMinutes(5)
-): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
-    return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
-}
+public data class SchedulerStats(
+    val workflowsSubmitted: Int,
+    val workflowsRunning: Int,
+    val workflowsFinished: Int,
+    val tasksSubmitted: Int,
+    val tasksRunning: Int,
+    val tasksFinished: Int
+)

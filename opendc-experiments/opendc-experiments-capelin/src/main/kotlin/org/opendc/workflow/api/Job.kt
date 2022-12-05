@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 AtLarge Research
+ * Copyright (c) 2021 AtLarge Research
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,27 @@
  * SOFTWARE.
  */
 
-@file:JvmName("WorkflowSteps")
+package org.opendc.workflow.api
 
-package org.opendc.experiments.workflow
-
-import org.opendc.experiments.provisioner.ProvisioningStep
-import org.opendc.workflow.service.WorkflowService
-import java.time.Duration
+import java.util.UUID
 
 /**
- * Return a [ProvisioningStep] that sets up a [WorkflowService].
+ * A workload that represents a directed acyclic graph (DAG) of tasks with control and data dependencies between tasks.
+ *
+ * @property uid A unique identified of this workflow.
+ * @property name The name of this workflow.
+ * @property tasks The tasks that are part of this workflow.
+ * @property metadata Additional metadata for the job.
  */
-public fun setupWorkflowService(
-    serviceDomain: String,
-    computeService: String,
-    scheduler: WorkflowSchedulerSpec,
-    schedulingQuantum: Duration = Duration.ofMinutes(5)
-): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
-    return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
+public data class Job(
+    val uid: UUID,
+    val name: String,
+    val tasks: Set<Task>,
+    val metadata: Map<String, Any> = emptyMap()
+) {
+    override fun equals(other: Any?): Boolean = other is Job && uid == other.uid
+
+    override fun hashCode(): Int = uid.hashCode()
+
+    override fun toString(): String = "Job(uid=$uid, name=$name, tasks=${tasks.size}, metadata=$metadata)"
 }

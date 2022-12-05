@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 AtLarge Research
+ * Copyright (c) 2021 AtLarge Research
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,21 @@
  * SOFTWARE.
  */
 
-@file:JvmName("WorkflowSteps")
+package org.opendc.workflow.service.internal
 
-package org.opendc.experiments.workflow
+import org.opendc.workflow.api.Job
+import kotlin.coroutines.Continuation
 
-import org.opendc.experiments.provisioner.ProvisioningStep
-import org.opendc.workflow.service.WorkflowService
-import java.time.Duration
+public class JobState(public val job: Job, public val submittedAt: Long, internal val cont: Continuation<Unit>) {
+    /**
+     * A flag to indicate whether this job is finished.
+     */
+    public val isFinished: Boolean
+        get() = tasks.isEmpty()
 
-/**
- * Return a [ProvisioningStep] that sets up a [WorkflowService].
- */
-public fun setupWorkflowService(
-    serviceDomain: String,
-    computeService: String,
-    scheduler: WorkflowSchedulerSpec,
-    schedulingQuantum: Duration = Duration.ofMinutes(5)
-): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
-    return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
+    internal val tasks: MutableSet<TaskState> = mutableSetOf()
+
+    override fun equals(other: Any?): Boolean = other is JobState && other.job == job
+
+    override fun hashCode(): Int = job.hashCode()
 }

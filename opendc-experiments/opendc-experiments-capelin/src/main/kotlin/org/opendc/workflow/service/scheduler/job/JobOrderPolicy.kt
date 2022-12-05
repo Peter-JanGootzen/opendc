@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 AtLarge Research
+ * Copyright (c) 2021 AtLarge Research
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,12 @@
  * SOFTWARE.
  */
 
-@file:JvmName("WorkflowSteps")
+package org.opendc.workflow.service.scheduler.job
 
-package org.opendc.experiments.workflow
-
-import org.opendc.experiments.provisioner.ProvisioningStep
-import org.opendc.workflow.service.WorkflowService
-import java.time.Duration
+import org.opendc.workflow.service.internal.JobState
+import org.opendc.workflow.service.scheduler.StagePolicy
 
 /**
- * Return a [ProvisioningStep] that sets up a [WorkflowService].
+ * A policy interface for ordering admitted workflows in the scheduling queue.
  */
-public fun setupWorkflowService(
-    serviceDomain: String,
-    computeService: String,
-    scheduler: WorkflowSchedulerSpec,
-    schedulingQuantum: Duration = Duration.ofMinutes(5)
-): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
-    return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
-}
+public interface JobOrderPolicy : StagePolicy<Comparator<JobState>>

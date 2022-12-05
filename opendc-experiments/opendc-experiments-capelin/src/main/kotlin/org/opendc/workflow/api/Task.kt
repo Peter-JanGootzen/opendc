@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 AtLarge Research
+ * Copyright (c) 2021 AtLarge Research
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,25 @@
  * SOFTWARE.
  */
 
-@file:JvmName("WorkflowSteps")
+package org.opendc.workflow.api
 
-package org.opendc.experiments.workflow
-
-import org.opendc.experiments.provisioner.ProvisioningStep
-import org.opendc.workflow.service.WorkflowService
-import java.time.Duration
+import java.util.UUID
 
 /**
- * Return a [ProvisioningStep] that sets up a [WorkflowService].
+ * A stage of a [Job].
+ *
+ * @property uid A unique identified of this task.
+ * @property name The name of this task.
+ * @property dependencies The dependencies of this task in order for it to execute.
+ * @property metadata Additional metadata for this task.
  */
-public fun setupWorkflowService(
-    serviceDomain: String,
-    computeService: String,
-    scheduler: WorkflowSchedulerSpec,
-    schedulingQuantum: Duration = Duration.ofMinutes(5)
-): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
-    return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
+public data class Task(
+    val uid: UUID,
+    val name: String,
+    val dependencies: Set<Task>,
+    val metadata: Map<String, Any> = emptyMap()
+) {
+    override fun equals(other: Any?): Boolean = other is Task && uid == other.uid
+
+    override fun hashCode(): Int = uid.hashCode()
 }

@@ -33,7 +33,11 @@ import org.opendc.compute.service.scheduler.filters.RamFilter
 import org.opendc.compute.service.scheduler.filters.VCpuFilter
 import org.opendc.compute.service.scheduler.weights.VCpuWeigher
 import org.opendc.experiments.compute.setupComputeService
+import org.opendc.experiments.compute.telemetry.ComputeMonitor
+import org.opendc.experiments.compute.registerComputeMonitor
 import org.opendc.experiments.compute.setupHosts
+import org.opendc.experiments.compute.telemetry.table.HostTableReader
+import org.opendc.experiments.compute.telemetry.table.ServiceTableReader
 import org.opendc.experiments.compute.topology.HostSpec
 import org.opendc.experiments.provisioner.Provisioner
 import org.opendc.experiments.provisioner.ProvisioningContext
@@ -46,30 +50,62 @@ import org.opendc.simulator.compute.model.MachineModel
 import org.opendc.simulator.compute.model.MemoryUnit
 import org.opendc.simulator.compute.model.ProcessingNode
 import org.opendc.simulator.compute.model.ProcessingUnit
+import org.opendc.simulator.compute.power.CpuPowerModel
+import org.opendc.simulator.compute.power.CpuPowerModels
 import org.opendc.simulator.flow2.mux.FlowMultiplexerFactory
 import org.opendc.simulator.kotlin.runSimulation
 import org.opendc.trace.Trace
 import org.opendc.workflow.service.scheduler.job.NullJobAdmissionPolicy
 import org.opendc.workflow.service.scheduler.job.SubmissionTimeJobOrderPolicy
 import org.opendc.workflow.service.scheduler.task.NullTaskEligibilityPolicy
-import org.opendc.workflow.service.scheduler.task.RandomTaskOrderPolicy
 import org.opendc.workflow.service.scheduler.task.SubmissionTimeTaskOrderPolicy
+import java.io.File
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.UUID
 
+class TestComputeMonitor : ComputeMonitor {
+    var attemptsSuccess = 0
+    var attemptsFailure = 0
+    var attemptsError = 0
+    var serversPending = 0
+    var serversActive = 0
+
+    override fun record(reader: ServiceTableReader) {
+        attemptsSuccess = reader.attemptsSuccess
+        attemptsFailure = reader.attemptsFailure
+        attemptsError = reader.attemptsError
+        serversPending = reader.serversPending
+        serversActive = reader.serversActive
+    }
+
+    var idleTime = 0L
+    var activeTime = 0L
+    var stealTime = 0L
+    var lostTime = 0L
+    var energyUsage = 0.0
+    var uptime = 0L
+
+    override fun record(reader: HostTableReader) {
+        idleTime += reader.cpuIdleTime
+        activeTime += reader.cpuActiveTime
+        stealTime += reader.cpuStealTime
+        lostTime += reader.cpuLostTime
+        energyUsage += reader.powerTotal
+        uptime += reader.uptime
+    }
+}
+
 /**
- * Integration test suite for the [WorkflowService].
+ * Data Analysis Test
  */
-@DisplayName("WorkflowService")
-internal class WorkflowServiceTest {
-    /**
-     * A large integration test where we check whether all tasks in some trace are executed correctly.
-     */
+@DisplayName("Analysis")
+internal class AnalysisV1 {
     @Test
     fun testTrace() = runSimulation {
         val computeService = "compute.opendc.org"
         val workflowService = "workflow.opendc.org"
+        val monitor = TestComputeMonitor()
 
         Provisioner(coroutineContext, clock, seed = 0L).use { provisioner ->
             val scheduler: (ProvisioningContext) -> ComputeScheduler = {
@@ -93,9 +129,10 @@ internal class WorkflowServiceTest {
                         jobAdmissionPolicy = NullJobAdmissionPolicy,
                         jobOrderPolicy = SubmissionTimeJobOrderPolicy(),
                         taskEligibilityPolicy = NullTaskEligibilityPolicy,
-                        taskOrderPolicy = RandomTaskOrderPolicy
+                        taskOrderPolicy = SubmissionTimeTaskOrderPolicy()
                     )
-                )
+                ),
+                registerComputeMonitor(computeService, monitor)
             )
 
             val service = provisioner.registry.resolve(workflowService, WorkflowService::class.java)!!
@@ -105,23 +142,30 @@ internal class WorkflowServiceTest {
                 format = "gwf"
             )
             service.replay(clock, trace.toJobs())
+        }
 
-            val metrics = service.getSchedulerStats()
 
-            assertAll(
-                { assertEquals(758, metrics.workflowsSubmitted, "No jobs submitted") },
-                { assertEquals(0, metrics.workflowsRunning, "Not all submitted jobs started") },
-                {
-                    assertEquals(
-                        metrics.workflowsSubmitted,
-                        metrics.workflowsFinished,
-                        "Not all started jobs finished"
-                    )
-                },
-                { assertEquals(0, metrics.tasksRunning, "Not all started tasks finished") },
-                { assertEquals(metrics.tasksSubmitted, metrics.tasksFinished, "Not all started tasks finished") },
-                { assertEquals(45977707L, clock.millis()) { "Total duration incorrect" } }
-            )
+        println(
+            "Scheduler " +
+                "Success=${monitor.attemptsSuccess} " +
+                "Failure=${monitor.attemptsFailure} " +
+                "Error=${monitor.attemptsError} " +
+                "Pending=${monitor.serversPending} " +
+                "Active=${monitor.serversActive} " +
+                "Energy=${monitor.energyUsage} " +
+                "Uptime=${monitor.uptime}"
+        )
+        writeMonitorStats(monitor)
+    }
+
+    private fun writeMonitorStats(monitor : TestComputeMonitor) {
+        File("results.txt").printWriter().use { out ->
+            out.println("EnergyUsage:${monitor.energyUsage}")
+            out.println("ActiveTime:${monitor.activeTime}")
+            out.println("IdleTime:${monitor.idleTime}")
+            out.println("UpTime:${monitor.uptime}")
+            out.println("StealTime:${monitor.stealTime}")
+            out.println("LostTime:${monitor.lostTime}")
         }
     }
 
@@ -141,7 +185,7 @@ internal class WorkflowServiceTest {
             "host-$uid",
             emptyMap(),
             machineModel,
-            SimPsuFactories.noop(),
+            SimPsuFactories.simple(CpuPowerModels.linear(100.0, 50.0)), /* TODO: REALISTIC POWER VALUES */
             FlowMultiplexerFactory.forwardingMultiplexer()
         )
     }

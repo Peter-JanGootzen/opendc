@@ -1,0 +1,6 @@
+EnergyUsage:1.4367908203125028E7
+ActiveTime:3320260
+IdleTime:-3320260
+UpTime:183600000
+StealTime:0
+LostTime:0

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 AtLarge Research
+ * Copyright (c) 2021 AtLarge Research
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,46 @@
  * SOFTWARE.
  */
 
-@file:JvmName("WorkflowSteps")
+package org.opendc.workflow.service.internal
 
-package org.opendc.experiments.workflow
-
-import org.opendc.experiments.provisioner.ProvisioningStep
 import org.opendc.workflow.service.WorkflowService
-import java.time.Duration
 
 /**
- * Return a [ProvisioningStep] that sets up a [WorkflowService].
+ * Interface for listening to events emitted by the [WorkflowService].
  */
-public fun setupWorkflowService(
-    serviceDomain: String,
-    computeService: String,
-    scheduler: WorkflowSchedulerSpec,
-    schedulingQuantum: Duration = Duration.ofMinutes(5)
-): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
-    return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
+public interface WorkflowSchedulerListener {
+    /**
+     * This method is invoked when [job] is submitted to the service.
+     */
+    public fun jobSubmitted(job: JobState) {}
+
+    /**
+     * This method is invoked when [job] is started by the service.
+     */
+    public fun jobStarted(job: JobState) {}
+
+    /**
+     * This method is invoked when [job] finishes.
+     */
+    public fun jobFinished(job: JobState) {}
+
+    /**
+     * This method is invoked when [task] becomes ready to be scheduled.
+     */
+    public fun taskReady(task: TaskState) {}
+
+    /**
+     * This method is invoked when [task] is assigned to a machine.
+     */
+    public fun taskAssigned(task: TaskState) {}
+
+    /**
+     * This method is invoked when [task] is started.
+     */
+    public fun taskStarted(task: TaskState) {}
+
+    /**
+     * This method is invoked when [task] finishes.
+     */
+    public fun taskFinished(task: TaskState) {}
 }
