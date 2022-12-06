@@ -41,15 +41,13 @@ import org.opendc.workflow.api.Job
 import org.opendc.workflow.api.Task
 import org.opendc.workflow.api.WORKFLOW_TASK_CORES
 import org.opendc.workflow.api.WORKFLOW_TASK_DEADLINE
-import org.opendc.workflow.api.WORKFLOW_TASK_EARLIEST_START_TIME
+import org.opendc.workflow.api.WORKFLOW_TASK_MINIMAL_START_TIME
 import org.opendc.workflow.service.WorkflowService
 import java.time.Clock
 import java.util.UUID
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.math.min
-import kotlin.collections.LinkedHashMap
-import kotlin.math.max
 
 /**
  * Convert [Trace] into a list of [Job]s that can be submitted to the workflow service.
@@ -89,7 +87,7 @@ public fun Trace.toJobs(): List<Job> {
                     WORKFLOW_TASK_CORES to grantedCpus,
                     // Called deadline, but filled with runtime???
                     WORKFLOW_TASK_DEADLINE to runtime.toMillis(),
-                    WORKFLOW_TASK_EARLIEST_START_TIME to 0
+                    WORKFLOW_TASK_MINIMAL_START_TIME to 0
                 )
             )
 

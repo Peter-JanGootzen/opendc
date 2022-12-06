@@ -35,7 +35,7 @@ public const val WORKFLOW_TASK_CORES: String = "workflow:task:cores"
 /**
  * Meta-data key for the earliest start time of a task.
  */
-public const val WORKFLOW_TASK_EARLIEST_START_TIME: String = "workflow:task:earliestStartTime"
+public const val WORKFLOW_TASK_MINIMAL_START_TIME: String = "workflow:task:minimalStartTime"
 
 /**
  * Meta-data key for the slack of a task.
