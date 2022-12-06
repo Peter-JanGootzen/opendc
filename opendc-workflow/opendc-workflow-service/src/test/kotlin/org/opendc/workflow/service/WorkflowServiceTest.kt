@@ -55,6 +55,7 @@ import org.opendc.workflow.service.scheduler.task.NullTaskEligibilityPolicy
 import org.opendc.workflow.service.scheduler.task.SubmissionTimeTaskOrderPolicy
 import java.nio.file.Paths
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 /**
@@ -103,7 +104,7 @@ internal class WorkflowServiceTest {
                 Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
                 format = "gwf"
             )
-            service.replay(clock, trace.toJobs())
+            service.replay(clock, trace.toJobs(Instant.ofEpochSecond(500)))
 
             val metrics = service.getSchedulerStats()
 

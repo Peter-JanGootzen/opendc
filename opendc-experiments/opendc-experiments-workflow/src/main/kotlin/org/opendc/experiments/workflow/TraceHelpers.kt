@@ -43,6 +43,7 @@ import org.opendc.workflow.api.WORKFLOW_TASK_CORES
 import org.opendc.workflow.api.WORKFLOW_TASK_DEADLINE
 import org.opendc.workflow.service.WorkflowService
 import java.time.Clock
+import java.time.Instant
 import java.util.UUID
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
@@ -51,7 +52,8 @@ import kotlin.math.min
 /**
  * Convert [Trace] into a list of [Job]s that can be submitted to the workflow service.
  */
-public fun Trace.toJobs(): List<Job> {
+public fun Trace.toJobs(submitTimeLimit: Instant = Instant.MAX): List<Job> {
+
     val table = checkNotNull(getTable(TABLE_TASKS))
     val reader = table.newReader()
 
@@ -72,6 +74,9 @@ public fun Trace.toJobs(): List<Job> {
                 reader.getInt(TASK_REQ_NCPUS)
             }
             val submitTime = reader.getInstant(TASK_SUBMIT_TIME)!!
+            if (submitTime > submitTimeLimit) {
+                continue
+            }
             val runtime = reader.getDuration(TASK_RUNTIME)!!
             val flops: Long = 4000 * runtime.seconds * grantedCpus
             val workload = SimWorkloads.flops(flops, 1.0)
