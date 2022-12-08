@@ -28,6 +28,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.opendc.compute.service.scheduler.ComputeScheduler
 import org.opendc.compute.service.scheduler.FilterScheduler
+import org.opendc.compute.service.scheduler.TaskFlowScheduler
 import org.opendc.compute.service.scheduler.filters.ComputeFilter
 import org.opendc.compute.service.scheduler.filters.RamFilter
 import org.opendc.compute.service.scheduler.filters.VCpuFilter
@@ -53,6 +54,7 @@ import org.opendc.workflow.service.scheduler.job.NullJobAdmissionPolicy
 import org.opendc.workflow.service.scheduler.job.SubmissionTimeJobOrderPolicy
 import org.opendc.workflow.service.scheduler.task.NullTaskEligibilityPolicy
 import org.opendc.workflow.service.scheduler.task.SubmissionTimeTaskOrderPolicy
+import org.opendc.workflow.service.scheduler.task.TaskFlowTaskEligibilityPolicy
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.UUID
@@ -72,9 +74,8 @@ internal class WorkflowServiceTest {
 
         Provisioner(coroutineContext, clock, seed = 0L).use { provisioner ->
             val scheduler: (ProvisioningContext) -> ComputeScheduler = {
-                FilterScheduler(
-                    filters = listOf(ComputeFilter(), VCpuFilter(1.0), RamFilter(1.0)),
-                    weighers = listOf(VCpuWeigher(1.0, multiplier = 1.0))
+                TaskFlowScheduler(
+                    clock = clock,
                 )
             }
 
@@ -91,7 +92,7 @@ internal class WorkflowServiceTest {
                         schedulingQuantum = Duration.ofMillis(100),
                         jobAdmissionPolicy = NullJobAdmissionPolicy,
                         jobOrderPolicy = SubmissionTimeJobOrderPolicy(),
-                        taskEligibilityPolicy = NullTaskEligibilityPolicy,
+                        taskEligibilityPolicy = TaskFlowTaskEligibilityPolicy(clock),
                         taskOrderPolicy = SubmissionTimeTaskOrderPolicy()
                     )
                 )
@@ -103,6 +104,7 @@ internal class WorkflowServiceTest {
                 Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
                 format = "gwf"
             )
+
             service.replay(clock, trace.toJobs())
 
             val metrics = service.getSchedulerStats()

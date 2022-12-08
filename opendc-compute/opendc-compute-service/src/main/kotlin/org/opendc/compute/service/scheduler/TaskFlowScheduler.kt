@@ -26,13 +26,14 @@ import org.opendc.compute.api.Server
 import org.opendc.compute.service.internal.HostView
 import org.opendc.compute.service.scheduler.filters.HostFilter
 import org.opendc.compute.service.scheduler.weights.HostWeigher
+import java.time.Clock
 import java.util.Random
 import kotlin.math.min
 
 /**
  * A [ComputeScheduler] implementation that uses filtering and weighing passes to select
  * the host to schedule a [Server] on.
- *
+
  * This implementation is based on the filter scheduler from OpenStack Nova.
  * See: https://docs.openstack.org/nova/latest/user/filter-scheduler.html
  *
@@ -42,8 +43,7 @@ import kotlin.math.min
  * @param random A [Random] instance for selecting
  */
 public class TaskFlowScheduler(
-    private val filters: List<HostFilter>,
-    private val weighers: List<HostWeigher>,
+    private val clock: Clock,
     private val subsetSize: Int = 1,
     private val random: Random = Random(0)
 ) : ComputeScheduler {
@@ -51,6 +51,8 @@ public class TaskFlowScheduler(
      * The pool of hosts available to the scheduler.
      */
     private val hosts = mutableListOf<HostView>()
+
+    private val WORKFLOW_TASK_SLACK: String = "workflow:task:slack"
 
     init {
         require(subsetSize >= 1) { "Subset size must be one or greater" }
@@ -65,39 +67,44 @@ public class TaskFlowScheduler(
     }
 
     override fun select(server: Server): HostView? {
-        val hosts = hosts
-        val filteredHosts = hosts.filter { host -> filters.all { filter -> filter.test(host, server) } }
+        val slack = server.meta.getOrDefault(WORKFLOW_TASK_SLACK, 0); // can be gotten from metadata, but the constant is not defined here
+        // Pass the clock through the metadata of a task, otherwise we can't calcaulate the remaining slack.
 
-        val subset = if (weighers.isNotEmpty()) {
-            val results = weighers.map { it.getWeights(filteredHosts, server) }
-            val weights = DoubleArray(filteredHosts.size)
-
-            for (result in results) {
-                val min = result.min
-                val range = (result.max - min)
-
-                // Skip result if all weights are the same
-                if (range == 0.0) {
-                    continue
-                }
-
-                val multiplier = result.multiplier
-                val factor = multiplier / range
-
-                for ((i, weight) in result.weights.withIndex()) {
-                    weights[i] += factor * (weight - min)
-                }
-            }
-
-            weights.indices
-                .asSequence()
-                .sortedByDescending { weights[it] }
-                .map { filteredHosts[it] }
-                .take(subsetSize)
-                .toList()
-        } else {
-            filteredHosts
-        }
+        //hosts.get(0).provisionedCores // to get the amount of cores available, should be enough for the task
+        hosts.get(0).host.meta
+        //hosts.get(0).host.meta.getOrDefault() // store the power information/model in the metadata of the host PowerModel
+//        val filteredHosts = hosts.filter { host -> filters.all { filter -> filter.test(host, server) } }
+//
+//        val subset = if (weighers.isNotEmpty()) {
+//            val results = weighers.map { it.getWeights(filteredHosts, server) }
+//            val weights = DoubleArray(filteredHosts.size)
+//
+//            for (result in results) {
+//                val min = result.min
+//                val range = (result.max - min)
+//
+//                // Skip result if all weights are the same
+//                if (range == 0.0) {
+//                    continue
+//                }
+//
+//                val multiplier = result.multiplier
+//                val factor = multiplier / range
+//
+//                for ((i, weight) in result.weights.withIndex()) {
+//                    weights[i] += factor * (weight - min)
+//                }
+//            }
+//
+//            weights.indices
+//                .asSequence()
+//                .sortedByDescending { weights[it] }
+//                .map { filteredHosts[it] }
+//                .take(subsetSize)
+//                .toList()
+//        } else {
+          val subset = hosts
+//        }
 
         return when (val maxSize = min(subsetSize, subset.size)) {
             0 -> null
