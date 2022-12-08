@@ -184,12 +184,12 @@ public class WorkflowServiceImpl(
 
             _tasksSubmitted++
         }
+        instances.values.toCollection(jobInstance.tasks)
 
         // All the states have been created
-        // Now we compu
+        // Now we compute the slack of the Job
         jobInstance.computeSlack()
 
-        instances.values.toCollection(jobInstance.tasks)
         incomingJobs += jobInstance
         rootListener.jobSubmitted(jobInstance)
         _workflowsSubmitted++
