@@ -28,6 +28,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.opendc.compute.service.scheduler.ComputeScheduler
 import org.opendc.compute.service.scheduler.FilterScheduler
+import org.opendc.compute.service.scheduler.FirstComeScheduler
 import org.opendc.compute.service.scheduler.filters.ComputeFilter
 import org.opendc.compute.service.scheduler.filters.RamFilter
 import org.opendc.compute.service.scheduler.filters.VCpuFilter
@@ -72,10 +73,7 @@ internal class WorkflowServiceTest {
 
         Provisioner(coroutineContext, clock, seed = 0L).use { provisioner ->
             val scheduler: (ProvisioningContext) -> ComputeScheduler = {
-                FilterScheduler(
-                    filters = listOf(ComputeFilter(), VCpuFilter(1.0), RamFilter(1.0)),
-                    weighers = listOf(VCpuWeigher(1.0, multiplier = 1.0))
-                )
+                FirstComeScheduler()
             }
 
             provisioner.runSteps(
@@ -106,7 +104,12 @@ internal class WorkflowServiceTest {
             service.replay(clock, trace.toJobs())
 
             val metrics = service.getSchedulerStats()
+            print(metrics.workflowsSubmitted)
+            print("running:\n")
+            print(metrics.workflowsRunning)
+            print("finished:\n")
 
+            print(metrics.workflowsFinished)
             assertAll(
                 { assertEquals(758, metrics.workflowsSubmitted, "No jobs submitted") },
                 { assertEquals(0, metrics.workflowsRunning, "Not all submitted jobs started") },
@@ -130,7 +133,7 @@ internal class WorkflowServiceTest {
     private fun createHostSpec(uid: Int): HostSpec {
         // Machine model based on: https://www.spec.org/power_ssj2008/results/res2020q1/power_ssj2008-20191125-01012.html
         val node = ProcessingNode("AMD", "am64", "EPYC 7742", 32)
-        val cpus = List(node.coreCount) { ProcessingUnit(node, it, 3400.0) }
+        val cpus = List(node.coreCount) { ProcessingUnit(node, it, 3400.0, 125, true) }
         val memory = List(8) { MemoryUnit("Samsung", "Unknown", 2933.0, 16_000) }
 
         val machineModel = MachineModel(cpus, memory)
@@ -138,7 +141,7 @@ internal class WorkflowServiceTest {
         return HostSpec(
             UUID(0, uid.toLong()),
             "host-$uid",
-            emptyMap(),
+            mutableMapOf(Pair("EnergyEfficiency", 100)),
             machineModel,
             SimPsuFactories.noop(),
             FlowMultiplexerFactory.forwardingMultiplexer()
