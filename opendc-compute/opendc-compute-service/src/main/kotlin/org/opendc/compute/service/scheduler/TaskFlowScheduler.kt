@@ -53,6 +53,8 @@ public class TaskFlowScheduler(
     private val hosts = mutableListOf<HostView>()
 
     private val WORKFLOW_TASK_SLACK: String = "workflow:task:slack"
+    private val WORKFLOW_TASK_MINIMAL_START_TIME: String = "workflow:task:minimalStartTime"
+    private val TASK_WORKLOAD: String = "workload"
 
     init {
         require(subsetSize >= 1) { "Subset size must be one or greater" }
@@ -67,45 +69,53 @@ public class TaskFlowScheduler(
     }
 
     override fun select(server: Server): HostView? {
-        val slack = server.meta.getOrDefault(WORKFLOW_TASK_SLACK, 0); // can be gotten from metadata, but the constant is not defined here
-        // Pass the clock through the metadata of a task, otherwise we can't calcaulate the remaining slack.
+        // Get the simulated time. Starts at 0 when the simulator starts.
+        val currentTime: Long = clock.millis()
 
-        //hosts.get(0).provisionedCores // to get the amount of cores available, should be enough for the task
-        hosts.get(0).host.meta
-        //hosts.get(0).host.meta.getOrDefault() // store the power information/model in the metadata of the host PowerModel
-//        val filteredHosts = hosts.filter { host -> filters.all { filter -> filter.test(host, server) } }
-//
-//        val subset = if (weighers.isNotEmpty()) {
-//            val results = weighers.map { it.getWeights(filteredHosts, server) }
-//            val weights = DoubleArray(filteredHosts.size)
-//
-//            for (result in results) {
-//                val min = result.min
-//                val range = (result.max - min)
-//
-//                // Skip result if all weights are the same
-//                if (range == 0.0) {
-//                    continue
-//                }
-//
-//                val multiplier = result.multiplier
-//                val factor = multiplier / range
-//
-//                for ((i, weight) in result.weights.withIndex()) {
-//                    weights[i] += factor * (weight - min)
-//                }
-//            }
-//
-//            weights.indices
-//                .asSequence()
-//                .sortedByDescending { weights[it] }
-//                .map { filteredHosts[it] }
-//                .take(subsetSize)
-//                .toList()
-//        } else {
-          val subset = hosts
-//        }
+        // Get the slack for the task that will be running on the VM.
+        val slack: Long = server.meta.getOrDefault(WORKFLOW_TASK_SLACK, 0L) as Long;
+        val earliestStartTime: Long = server.meta.getOrDefault(WORKFLOW_TASK_MINIMAL_START_TIME, 0L) as Long;
+        val remainingSlack: Long = maxOf(0L, slack - (currentTime - earliestStartTime))
 
+        // These checks were commented out in LookAheadPlacement.kt
+        if (earliestStartTime < 0) {
+            println("[ERR] A task had negative earliest start time.")
+        }
+
+        if (currentTime < earliestStartTime) {
+            println("[ERR] A task was possibly scheduled before it was submitted.")
+        }
+
+        // The server VM can only be mapped to hosts that can fit it.
+        val cpuDemand: Int = server.flavor.cpuCount
+        val ramDemand: Long = server.flavor.memorySize
+
+        // We know the amount of FLOPs for the task.
+        // Unfortunately SimFlopsWorkload isn't available here so maybe duplicate or use reflection?
+        // I think another part of the code should add the raw FLOPS to the metadata not a nested object.
+        val flopWorkload = server.meta.getOrDefault(TASK_WORKLOAD, 0L) as Long;
+
+
+        // TODO:
+        //   - Filter hosts by cores available
+        //   - Filter hosts by memory available
+        //   - Somehow get the performance/watt for every machine
+        //   - Provision on the most power efficient host that we can manage given the slack
+
+        // Example of how to get data from hostView.
+        val host = hosts.get(0)
+        val cpuLeft = host.host.model.cpuCount - host.provisionedCores
+        val ramLeft = host.availableMemory
+
+        // Voodoo starts here..
+        // We can access the baremetal host using Java reflection.
+        // returns a SimBareMetalMachine from which we don't seem to be able to do anything.
+        // Because it is again defined outside this project.
+//        val machine = host.host.javaClass.getDeclaredField("machine")
+//        val machineFields: SimBareMetalMachine = machine.javaClass.declaredFields
+
+
+        val subset = hosts
         return when (val maxSize = min(subsetSize, subset.size)) {
             0 -> null
             1 -> subset[0]
