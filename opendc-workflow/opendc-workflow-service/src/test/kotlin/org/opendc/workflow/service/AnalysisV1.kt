@@ -110,7 +110,7 @@ internal class AnalysisV1 {
                 SubmissionTimeJobOrderPolicy(),
                 NullTaskEligibilityPolicy,
                 RandomTaskOrderPolicy,
-                "active-servers"
+                "lab1" // From a predefined list of computescheduler policies. Custom can be defined there
             )
 
             assertDoesNotThrow { runner.runScenario(scenario, seed = 0L) }

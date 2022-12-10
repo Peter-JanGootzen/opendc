@@ -107,7 +107,7 @@ public class LabRunner(
         Provisioner(coroutineContext, clock, seed).use { provisioner ->
             provisioner.runSteps(
                 setupComputeService(computeDomain, { createComputeScheduler(scenario.allocationPolicy, Random(it.seeder.nextLong())) }),
-                setupHosts(computeDomain, topology, optimize = true),
+                setupHosts(computeDomain, topology),
                 registerComputeMonitor(computeDomain, monitor),
                 setupWorkflowService(
                     workflowDomain,
