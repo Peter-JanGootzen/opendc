@@ -22,6 +22,12 @@
 
 package org.opendc.workflow.service.lab.model
 
+import org.opendc.workflow.service.scheduler.job.JobAdmissionPolicy
+import org.opendc.workflow.service.scheduler.job.JobOrderPolicy
+import org.opendc.workflow.service.scheduler.task.TaskOrderPolicy
+import org.opendc.workflow.service.scheduler.task.TaskEligibilityPolicy
+import java.time.Duration
+
 /**
  * A single scenario of a portfolio.
  *
@@ -34,7 +40,10 @@ package org.opendc.workflow.service.lab.model
 public data class Scenario(
     val topology: Topology,
     val workload: Workload,
-    val operationalPhenomena: OperationalPhenomena,
+    val schedQuantum: Duration,
+    val jobAdmissionPolicy: JobAdmissionPolicy,
+    val jobOrderPolicy: JobOrderPolicy,
+    val taskEligibilityPolicy: TaskEligibilityPolicy,
+    val taskOrderPolicy: TaskOrderPolicy,
     val allocationPolicy: String,
-    val partitions: Map<String, String> = emptyMap()
 )

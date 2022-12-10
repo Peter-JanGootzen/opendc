@@ -113,14 +113,11 @@ public class LabRunner(
                     workflowDomain,
                     computeDomain,
                     WorkflowSchedulerSpec(
-                        schedulingQuantum = Duration.ofMillis(100),
-                        jobAdmissionPolicy = NullJobAdmissionPolicy,
-//                        jobAdmissionPolicy = LimitJobAdmissionPolicy(0),
-                        jobOrderPolicy = SubmissionTimeJobOrderPolicy(),
-//                        jobOrderPolicy = SizeJobOrderPolicy(),
-                        taskEligibilityPolicy = NullTaskEligibilityPolicy,
-//                        taskEligibilityPolicy = RandomTaskEligibilityPolicy(),
-                        taskOrderPolicy = RandomTaskOrderPolicy
+                        schedulingQuantum = scenario.schedQuantum,
+                        jobAdmissionPolicy = scenario.jobAdmissionPolicy,
+                        jobOrderPolicy = scenario.jobOrderPolicy,
+                        taskEligibilityPolicy = scenario.taskEligibilityPolicy,
+                        taskOrderPolicy = scenario.taskOrderPolicy
                     )
                 ),
             )

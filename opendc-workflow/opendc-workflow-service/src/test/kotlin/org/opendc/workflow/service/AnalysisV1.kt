@@ -105,7 +105,11 @@ internal class AnalysisV1 {
             val scenario = Scenario(
                 Topology("topology"),
                 Workload("test", trace),
-                OperationalPhenomena(failureFrequency = 24.0 * 7, hasInterference = true),
+                Duration.ofMillis(100),
+                NullJobAdmissionPolicy,
+                SubmissionTimeJobOrderPolicy(),
+                NullTaskEligibilityPolicy,
+                RandomTaskOrderPolicy,
                 "active-servers"
             )
 
