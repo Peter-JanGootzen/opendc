@@ -118,6 +118,11 @@ public class LabRunner(
             service.replay(clock, scenario.workload.source.toJobs())
         }
         monitor.show("testTrace", "results.txt")
+
+        File("results.csv").printWriter().use { out ->
+            out.println("energy, idle_t, active_t, up_t, util")
+            out.println("${monitor.energyUsage.sum() / 3600}, ${monitor.idleTime}, ${monitor.activeTime}, ${monitor.uptime}, ${monitor.cpuUtilization.average()}")
+        }
     }
 }
 
