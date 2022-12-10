@@ -92,31 +92,26 @@ import kotlin.random.Random
 @DisplayName("Analysis")
 internal class AnalysisV1 {
     @Test
-    fun testSmoke() {
-        val outputPath = Files.createTempDirectory("output").toFile()
+    fun testRunner() {
         val envPath = File("src/test/resources/env")
-        val tracePath = File("src/test/resources/trace")
         val trace = Trace.open(
             Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
             format = "gwf"
         )
-        try {
-            val runner = LabRunner(envPath, tracePath, outputPath)
-            val scenario = Scenario(
-                Topology("topology"),
-                Workload("test", trace),
-                Duration.ofMillis(100),
-                NullJobAdmissionPolicy,
-                SubmissionTimeJobOrderPolicy(),
-                NullTaskEligibilityPolicy,
-                RandomTaskOrderPolicy,
-                "lab1" // From a predefined list of computescheduler policies. Custom can be defined there
-            )
 
-            assertDoesNotThrow { runner.runScenario(scenario, seed = 0L) }
-        } finally {
-            outputPath.delete()
-        }
+        val runner = LabRunner(envPath)
+        val scenario = Scenario(
+            Topology("topology"),
+            Workload("test", trace),
+            Duration.ofMillis(100),
+            NullJobAdmissionPolicy,
+            SubmissionTimeJobOrderPolicy(),
+            NullTaskEligibilityPolicy,
+            RandomTaskOrderPolicy,
+            "lab1" // From a predefined list of computescheduler policies. Custom can be defined there
+        )
+
+        assertDoesNotThrow { runner.runScenario(scenario, seed = 0L) }
     }
 
 

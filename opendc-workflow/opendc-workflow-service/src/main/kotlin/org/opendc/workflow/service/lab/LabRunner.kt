@@ -81,20 +81,11 @@ import kotlin.math.roundToLong
  * Helper class for running the Capelin experiments.
  *
  * @param envPath The path to the directory containing the environments.
- * @param tracePath The path to the directory containing the traces.
- * @param outputPath The path to the directory where the output should be written (or `null` if no output should be generated).
  */
 
 public class LabRunner(
     private val envPath: File,
-    tracePath: File,
-    private val outputPath: File?
 ) {
-    /**
-     * The [ComputeWorkloadLoader] to use for loading the traces.
-     */
-    private val workloadLoader = ComputeWorkloadLoader(tracePath)
-
     /**
      * Run a single [scenario] with the specified seed.
      */
