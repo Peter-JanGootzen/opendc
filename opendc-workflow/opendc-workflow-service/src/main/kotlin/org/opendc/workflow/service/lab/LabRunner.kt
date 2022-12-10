@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 AtLarge Research
+ * Copyright (c) 2022 AtLarge Research
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,125 +20,98 @@
  * SOFTWARE.
  */
 
-package org.opendc.workflow.service
+package org.opendc.workflow.service.lab
 
-import org.opendc.workflow.service.lab.LabRunner
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.opendc.workflow.service.WorkflowService
+
+import org.opendc.compute.service.ComputeService
 import org.opendc.workflow.service.lab.model.Scenario
-import org.opendc.workflow.service.lab.model.OperationalPhenomena
-import org.opendc.workflow.service.lab.model.Topology
-import org.opendc.workflow.service.lab.model.Workload
-import org.opendc.experiments.compute.trace
-
-import org.junit.jupiter.api.Assertions.assertAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.DisplayName
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
-import org.opendc.compute.service.scheduler.ComputeScheduler
-import org.opendc.compute.service.scheduler.FilterScheduler
-import org.opendc.compute.service.scheduler.filters.ComputeFilter
-import org.opendc.compute.service.scheduler.filters.RamFilter
-import org.opendc.compute.service.scheduler.filters.VCpuFilter
-import org.opendc.compute.service.scheduler.weights.VCpuWeigher
-import org.opendc.experiments.compute.setupComputeService
-import org.opendc.experiments.compute.telemetry.ComputeMonitor
+import org.opendc.workflow.service.lab.topology.clusterTopology
+import org.opendc.experiments.compute.ComputeWorkloadLoader
+import org.opendc.experiments.compute.createComputeScheduler
+import org.opendc.experiments.compute.export.parquet.ParquetComputeMonitor
+import org.opendc.experiments.compute.grid5000
 import org.opendc.experiments.compute.registerComputeMonitor
+import org.opendc.experiments.compute.replay
+import org.opendc.experiments.compute.setupComputeService
 import org.opendc.experiments.compute.setupHosts
+import org.opendc.experiments.compute.telemetry.ComputeMonitor
 import org.opendc.experiments.compute.telemetry.table.HostInfo
 import org.opendc.experiments.compute.telemetry.table.HostTableReader
 import org.opendc.experiments.compute.telemetry.table.ServerInfo
 import org.opendc.experiments.compute.telemetry.table.ServerTableReader
 import org.opendc.experiments.compute.telemetry.table.ServiceTableReader
-import org.opendc.experiments.compute.topology.HostSpec
-import org.opendc.experiments.compute.trace
 import org.opendc.experiments.provisioner.Provisioner
-import org.opendc.experiments.provisioner.ProvisioningContext
-import org.opendc.experiments.workflow.WorkflowSchedulerSpec
-import org.opendc.experiments.workflow.replay
-import org.opendc.experiments.workflow.setupWorkflowService
-import org.opendc.experiments.workflow.toJobs
-import org.opendc.simulator.compute.SimPsuFactories
-import org.opendc.simulator.compute.model.MachineModel
-import org.opendc.simulator.compute.model.MemoryUnit
-import org.opendc.simulator.compute.model.ProcessingNode
-import org.opendc.simulator.compute.model.ProcessingUnit
-import org.opendc.simulator.compute.power.CpuPowerModel
-import org.opendc.simulator.compute.power.CpuPowerModels
-import org.opendc.simulator.flow2.mux.FlowMultiplexerFactory
 import org.opendc.simulator.kotlin.runSimulation
+//import org.opendc.experiments.workflow.toJobs
+import org.opendc.simulator.compute.workload.SimWorkloads
 import org.opendc.trace.Trace
-import org.opendc.workflow.service.scheduler.job.LimitJobAdmissionPolicy
+import org.opendc.trace.conv.TABLE_TASKS
+import org.opendc.trace.conv.TASK_ALLOC_NCPUS
+import org.opendc.trace.conv.TASK_ID
+import org.opendc.trace.conv.TASK_PARENTS
+import org.opendc.trace.conv.TASK_REQ_NCPUS
+import org.opendc.trace.conv.TASK_RUNTIME
+import org.opendc.trace.conv.TASK_SUBMIT_TIME
+import org.opendc.trace.conv.TASK_WORKFLOW_ID
+import org.opendc.workflow.api.Job
+import org.opendc.workflow.api.Task
+import org.opendc.workflow.api.WORKFLOW_TASK_CORES
+import org.opendc.workflow.api.WORKFLOW_TASK_DEADLINE
 import org.opendc.workflow.service.scheduler.job.NullJobAdmissionPolicy
-import org.opendc.workflow.service.scheduler.job.SizeJobOrderPolicy
 import org.opendc.workflow.service.scheduler.job.SubmissionTimeJobOrderPolicy
 import org.opendc.workflow.service.scheduler.task.NullTaskEligibilityPolicy
-import org.opendc.workflow.service.scheduler.task.RandomTaskEligibilityPolicy
 import org.opendc.workflow.service.scheduler.task.RandomTaskOrderPolicy
-import org.opendc.workflow.service.scheduler.task.SubmissionTimeTaskOrderPolicy
+//import org.opendc.workflow.service.WorkflowService
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.time.Clock
 import java.time.Duration
+import java.util.Random
 import java.util.UUID
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import kotlin.random.Random
+import kotlin.math.min
+import kotlin.math.roundToLong
+
+//import org.opendc.workflow.service.lab
 
 
 /**
- * Data Analysis Test
+ * Helper class for running the Capelin experiments.
+ *
+ * @param envPath The path to the directory containing the environments.
+ * @param tracePath The path to the directory containing the traces.
+ * @param outputPath The path to the directory where the output should be written (or `null` if no output should be generated).
  */
-@DisplayName("Analysis")
-internal class AnalysisV1 {
-    @Test
-    fun testSmoke() {
-        val outputPath = Files.createTempDirectory("output").toFile()
-        val envPath = File("src/test/resources/env")
-        val tracePath = File("src/test/resources/trace")
-        val trace = Trace.open(
-            Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
-            format = "gwf"
-        )
-        try {
-            val runner = LabRunner(envPath, tracePath, outputPath)
-            val scenario = Scenario(
-                Topology("topology"),
-                Workload("test", trace),
-                OperationalPhenomena(failureFrequency = 24.0 * 7, hasInterference = true),
-                "active-servers"
-            )
 
-            assertDoesNotThrow { runner.runScenario(scenario, seed = 0L) }
-        } finally {
-            outputPath.delete()
-        }
-    }
+public class LabRunner(
+    private val envPath: File,
+    tracePath: File,
+    private val outputPath: File?
+) {
+    /**
+     * The [ComputeWorkloadLoader] to use for loading the traces.
+     */
+    private val workloadLoader = ComputeWorkloadLoader(tracePath)
 
-
-    @Test
-    fun testTrace() = runSimulation {
-        val computeService = "compute.opendc.org"
-        val workflowService = "workflow.opendc.org"
+    /**
+     * Run a single [scenario] with the specified seed.
+     */
+    fun runScenario(scenario: Scenario, seed: Long) = runSimulation {
+        val computeDomain = "compute.opendc.org"
+        val workflowDomain = "workflow.opendc.org"
+        val topology = clusterTopology(File(envPath, "${scenario.topology.name}.txt"))
         val monitor = TestComputeMonitor()
-//        Random.nextLong()
-        Provisioner(coroutineContext, clock, seed = 0L).use { provisioner ->
-            val scheduler: (ProvisioningContext) -> ComputeScheduler = {
-                FilterScheduler(
-                    filters = listOf(ComputeFilter(), VCpuFilter(1.0), RamFilter(1.0)),
-                    weighers = listOf(VCpuWeigher(1.0, multiplier = 1.0))
-                )
-            }
 
+        Provisioner(coroutineContext, clock, seed).use { provisioner ->
             provisioner.runSteps(
-                // Configure the ComputeService that is responsible for mapping virtual machines onto physical hosts
-                setupComputeService(computeService, scheduler, schedulingQuantum = Duration.ofSeconds(1)),
-                setupHosts(computeService, List(4) { createHostSpec(it) }),
-
-                // Configure the WorkflowService that is responsible for scheduling the workflow tasks onto machines
+                setupComputeService(computeDomain, { createComputeScheduler(scenario.allocationPolicy, Random(it.seeder.nextLong())) }),
+                setupHosts(computeDomain, topology, optimize = true),
+                registerComputeMonitor(computeDomain, monitor),
                 setupWorkflowService(
-                    workflowService,
-                    computeService,
+                    workflowDomain,
+                    computeDomain,
                     WorkflowSchedulerSpec(
                         schedulingQuantum = Duration.ofMillis(100),
                         jobAdmissionPolicy = NullJobAdmissionPolicy,
@@ -150,52 +123,13 @@ internal class AnalysisV1 {
                         taskOrderPolicy = RandomTaskOrderPolicy
                     )
                 ),
-                registerComputeMonitor(computeService, monitor)
             )
 
-            val service = provisioner.registry.resolve(workflowService, WorkflowService::class.java)!!
+            val service = provisioner.registry.resolve(workflowDomain, WorkflowService::class.java)!!
 
-            val trace = Trace.open(
-                Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
-                format = "gwf"
-            )
-            service.replay(clock, trace.toJobs())
+            service.replay(clock, scenario.workload.source.toJobs())
         }
-
         monitor.show("testTrace", "results.txt")
-//        writeMonitorStats(monitor)
-    }
-
-    private fun writeMonitorStats(monitor : TestComputeMonitor) {
-        File("results.txt").printWriter().use { out ->
-            out.println("EnergyUsage:${monitor.energyUsage}")
-            out.println("ActiveTime:${monitor.activeTime}")
-            out.println("IdleTime:${monitor.idleTime}")
-            out.println("UpTime:${monitor.uptime}")
-            out.println("StealTime:${monitor.stealTime}")
-            out.println("LostTime:${monitor.lostTime}")
-        }
-    }
-
-    /**
-     * Construct a [HostSpec] for a simulated host.
-     */
-    private fun createHostSpec(uid: Int): HostSpec {
-        // Machine model based on: https://www.spec.org/power_ssj2008/results/res2020q1/power_ssj2008-20191125-01012.html
-        val node = ProcessingNode("AMD", "am64", "EPYC 7742", 32)
-        val cpus = List(node.coreCount) { ProcessingUnit(node, it, 3400.0) }
-        val memory = List(8) { MemoryUnit("Samsung", "Unknown", 2933.0, 16_000) }
-
-        val machineModel = MachineModel(cpus, memory)
-
-        return HostSpec(
-            UUID(0, uid.toLong()),
-            "host-$uid",
-            emptyMap(),
-            machineModel,
-            SimPsuFactories.simple(CpuPowerModels.linear(350.0, 200.0)), /* TODO: REALISTIC POWER VALUES */
-            FlowMultiplexerFactory.forwardingMultiplexer()
-        )
     }
 }
 
