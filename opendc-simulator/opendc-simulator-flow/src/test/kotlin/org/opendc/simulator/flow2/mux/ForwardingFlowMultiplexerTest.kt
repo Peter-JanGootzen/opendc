@@ -22,6 +22,7 @@
 
 package org.opendc.simulator.flow2.mux
 
+import kotlinx.coroutines.yield
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
@@ -56,6 +57,13 @@ class ForwardingFlowMultiplexerTest {
                 )
             )
         graph.connect(workload.output, switch.newInput())
+
+
+        yield()
+
+        assertEquals(sink.capacity, switch.capacity) { "Capacity is not detected" }
+
+
 
         advanceUntilIdle()
 
