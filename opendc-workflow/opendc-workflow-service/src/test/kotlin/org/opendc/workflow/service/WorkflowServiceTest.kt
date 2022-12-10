@@ -73,7 +73,10 @@ internal class WorkflowServiceTest {
 
         Provisioner(coroutineContext, clock, seed = 0L).use { provisioner ->
             val scheduler: (ProvisioningContext) -> ComputeScheduler = {
-                FirstComeScheduler()
+                FilterScheduler(
+                    filters = listOf(ComputeFilter(), VCpuFilter(1.0), RamFilter(1.0)),
+                    weighers = listOf(VCpuWeigher(1.0, multiplier = 1.0))
+                )
             }
 
             provisioner.runSteps(
@@ -136,12 +139,13 @@ internal class WorkflowServiceTest {
         val cpus = List(node.coreCount) { ProcessingUnit(node, it, 3400.0, 125, true) }
         val memory = List(8) { MemoryUnit("Samsung", "Unknown", 2933.0, 16_000) }
 
-        val machineModel = MachineModel(cpus, memory)
+        //Third value is powerefficiency to be calculated prior by powerEfficiency = (TDP.toDouble() / numberOfCpus) * normalizedSpeed
+        val machineModel = MachineModel(cpus, memory, 100.0)
 
         return HostSpec(
             UUID(0, uid.toLong()),
             "host-$uid",
-            mutableMapOf(Pair("EnergyEfficiency", 100)),
+            emptyMap(),
             machineModel,
             SimPsuFactories.noop(),
             FlowMultiplexerFactory.forwardingMultiplexer()
