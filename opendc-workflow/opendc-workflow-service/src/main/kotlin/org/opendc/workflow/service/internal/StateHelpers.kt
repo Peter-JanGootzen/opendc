@@ -14,8 +14,8 @@ public fun JobState.computeSlack() {
         if (t.dependencies.isEmpty())  {
             t.task.metadata[WORKFLOW_TASK_SLACK] = 0L
         } else {
-            val cmin = t.dependencies.minWith(Comparator.comparingLong {it.task.metadata[WORKFLOW_TASK_SLACK] as Long})
-            t.task.metadata[WORKFLOW_TASK_SLACK] = cmin.task.metadata[WORKFLOW_TASK_SLACK] as Long -
+            val cmin = t.dependencies.minWith(Comparator.comparingLong {it.task.metadata.getOrDefault(WORKFLOW_TASK_SLACK, 0L) as Long})
+            t.task.metadata[WORKFLOW_TASK_SLACK] = cmin.task.metadata.getOrDefault(WORKFLOW_TASK_SLACK, 0L) as Long -
                 t.task.metadata[WORKFLOW_TASK_MINIMAL_START_TIME] as Long + t.task.metadata[WORKFLOW_TASK_DEADLINE] as Long
         }
     }
