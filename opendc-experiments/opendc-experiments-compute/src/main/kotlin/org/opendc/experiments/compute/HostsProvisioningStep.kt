@@ -24,6 +24,8 @@ package org.opendc.experiments.compute
 
 import org.opendc.compute.service.ComputeService
 import org.opendc.compute.simulator.SimHost
+import org.opendc.experiments.compute.topology.HOSTSPEC_NORMALIZEDSPEED
+import org.opendc.experiments.compute.topology.HOSTSPEC_POWEREFFICIENCY
 import org.opendc.experiments.compute.topology.HostSpec
 import org.opendc.experiments.provisioner.ProvisioningContext
 import org.opendc.experiments.provisioner.ProvisioningStep
@@ -49,6 +51,15 @@ public class HostsProvisioningStep internal constructor(
         val engine = FlowEngine.create(ctx.coroutineContext, ctx.clock)
         val graph = engine.newGraph()
         val hosts = mutableSetOf<SimHost>()
+
+        // By dividing by the number of CPUs we can support multiple CPUs that have differing frequencies
+        val highestFreq = specs.maxOfOrNull { it -> it.model.cpus.sumOf {it.frequency} / it.model.cpus.size }?.apply {
+            for (spec in specs) {
+                val normalizedSpeed = spec.model.cpus[0].frequency / this
+                spec.meta[HOSTSPEC_POWEREFFICIENCY] = spec.model.cpus[0].tdp / spec.model.cpus.size * normalizedSpeed
+                spec.meta[HOSTSPEC_NORMALIZEDSPEED] = normalizedSpeed
+            }
+        }
 
         for (spec in specs) {
             val machine = SimBareMetalMachine.create(graph, spec.model, spec.psuFactory)

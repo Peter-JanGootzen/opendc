@@ -145,7 +145,7 @@ internal class WorkflowServiceTest {
         return HostSpec(
             UUID(0, uid.toLong()),
             "host-$uid",
-            emptyMap(),
+            mutableMapOf(),
             machineModel,
             SimPsuFactories.noop(),
             FlowMultiplexerFactory.forwardingMultiplexer()

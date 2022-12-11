@@ -28,6 +28,9 @@ import org.opendc.simulator.compute.model.MachineModel
 import org.opendc.simulator.flow2.mux.FlowMultiplexerFactory
 import java.util.UUID
 
+public const val HOSTSPEC_NORMALIZEDSPEED: String = "hostspec:normalizedSpeed"
+public const val HOSTSPEC_POWEREFFICIENCY: String = "hostspec:powerEfficiency"
+
 /**
  * Description of a physical host that will be simulated by OpenDC and host the virtual machines.
  *
@@ -41,7 +44,7 @@ import java.util.UUID
 public data class HostSpec(
     val uid: UUID,
     val name: String,
-    val meta: Map<String, Any>,
+    val meta: MutableMap<String, Any>,
     val model: MachineModel,
     val psuFactory: SimPsuFactory = SimPsuFactories.noop(),
     val multiplexerFactory: FlowMultiplexerFactory = FlowMultiplexerFactory.maxMinMultiplexer()
