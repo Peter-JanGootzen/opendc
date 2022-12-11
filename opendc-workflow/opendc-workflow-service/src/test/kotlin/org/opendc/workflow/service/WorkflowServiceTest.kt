@@ -28,7 +28,6 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.opendc.compute.service.scheduler.ComputeScheduler
 import org.opendc.compute.service.scheduler.FilterScheduler
-import org.opendc.compute.service.scheduler.FirstComeScheduler
 import org.opendc.compute.service.scheduler.filters.ComputeFilter
 import org.opendc.compute.service.scheduler.filters.RamFilter
 import org.opendc.compute.service.scheduler.filters.VCpuFilter
@@ -107,12 +106,7 @@ internal class WorkflowServiceTest {
             service.replay(clock, trace.toJobs())
 
             val metrics = service.getSchedulerStats()
-            print(metrics.workflowsSubmitted)
-            print("running:\n")
-            print(metrics.workflowsRunning)
-            print("finished:\n")
 
-            print(metrics.workflowsFinished)
             assertAll(
                 { assertEquals(758, metrics.workflowsSubmitted, "No jobs submitted") },
                 { assertEquals(0, metrics.workflowsRunning, "Not all submitted jobs started") },
