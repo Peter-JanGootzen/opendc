@@ -83,6 +83,7 @@ public fun Trace.toJobs(): List<Job> {
                 "<unnamed>",
                 HashSet(),
                 mutableMapOf(
+                    "workload_flops" to flops,
                     "workload" to workload,
                     WORKFLOW_TASK_CORES to grantedCpus,
                     // Called deadline, but filled with runtime???

@@ -54,7 +54,7 @@ public class TaskFlowScheduler(
 
     private val WORKFLOW_TASK_SLACK: String = "workflow:task:slack"
     private val WORKFLOW_TASK_MINIMAL_START_TIME: String = "workflow:task:minimalStartTime"
-    private val TASK_WORKLOAD: String = "workload"
+    private val TASK_WORKLOAD: String = "workload_flops"
 
     init {
         require(subsetSize >= 1) { "Subset size must be one or greater" }
@@ -90,9 +90,7 @@ public class TaskFlowScheduler(
         val cpuDemand: Int = server.flavor.cpuCount
         val ramDemand: Long = server.flavor.memorySize
 
-        // We know the amount of FLOPs for the task.
-        // Unfortunately SimFlopsWorkload isn't available here so maybe duplicate or use reflection?
-        // I think another part of the code should add the raw FLOPS to the metadata not a nested object.
+        // We know the amount of FLOPs for the task. This is the total amount of FLOPs, so we can divide by the core count.
         val flopWorkload = server.meta.getOrDefault(TASK_WORKLOAD, 0L) as Long;
 
 
