@@ -22,7 +22,7 @@ if __name__ == "__main__":
     data_energy = [getData('energy1'), getData('energy2'), getData('energy3')]
 
     # Box plot combined with a violin plot of cpu utilization.
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6,3))
     ax = fig.subplots()
     ax.set_title("Workflow CPU Utilization per policy")
     ax.set_xlabel("CPU Utilization (%)")
@@ -31,18 +31,89 @@ if __name__ == "__main__":
     ax.violinplot(data_cpuUtil, vert=False, showmeans=True)
     ax.set_yticklabels(['Default', 'SizeJobOrderPolicy', 'RandomTaskEligibilityPolicy'])
     plt.tight_layout()
-    plt.savefig('cpuUtil.png')
+    plt.savefig('cpuUtil.png', transparent=True)
     plt.show()
 
     # Box plot combined with a violin plot of energy usage.
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6,3))
     ax = fig.subplots()
-    ax.set_title("Workflow Energy usage per policy")
-    ax.set_xlabel("Energy (J)")
+    ax.set_title("Workflow energy usage per policy")
+    ax.set_xlabel("Energy usage (Wh)")
     ax.set_ylabel("Policy")
-    ax.boxplot(data_energy, vert=False, showmeans=True, meanline=True)
-    ax.violinplot(data_energy, vert=False, showmeans=True)
+    ax.boxplot([i/3600 for i in data_energy], vert=False, showmeans=True, meanline=True)
+    ax.violinplot([i/3600 for i in data_energy], vert=False, showmeans=True)
     ax.set_yticklabels(['Default', 'SizeJobOrderPolicy', 'RandomTaskEligibilityPolicy'])
     plt.tight_layout()
-    plt.savefig('energyUse.png')
+    plt.savefig('energyUse.png', transparent=True)
+    plt.show()
+
+    # Line plot of energy usage compared to cpu utilization over time.
+    def moving_average(a, n=3):
+        ret = np.cumsum(a, dtype=float)
+        ret[n:] = ret[n:] - ret[:-n]
+        return ret[n - 1:] / n
+    fig = plt.figure(figsize=(12,4))
+    ax = fig.subplots()
+    ax.set_title("Workflow energy usage compared to CPU utilization over time")
+    ax.plot(getData('energy1')/3600, color='red', alpha=0.1, zorder=10)
+    ax.plot(moving_average(getData('energy1')/3600, 15), color='red', alpha=0.85, zorder=10)
+    ax.set_xlabel("Scheduler Cycles")
+    ax.set_ylabel("Energy usage (Wh)", color='red')
+    ax.set_ylim(bottom=0)
+    ax.hlines(np.max(getData('energy1')/3600), -10, len(getData('cpu1'))+10, linestyles='--', color='grey', alpha=0.7, zorder=0)
+    ax.hlines(np.min(getData('energy1')/3600), -10, len(getData('cpu1'))+10, linestyles='--', color='grey', alpha=0.7, zorder=0)
+    ax2=ax.twinx()
+    ax2.plot(getData('cpu1')*100, color='blue', alpha=0.1, zorder=5)
+    ax2.plot(moving_average(getData('cpu1')*100, 15), color='blue', alpha=0.85, zorder=5)
+    ax2.set_ylabel("CPU Utilization (%)", color='blue')
+    ax2.set_ylim(0,101)
+    plt.xlim(-10, len(getData('cpu1'))+10)
+    plt.tight_layout()
+    plt.savefig('twinEnergyUtilization.png', transparent=True)
+    plt.show()
+
+
+    # Previous line plot and violin plots combined in a subplot.
+
+    # Line plot of energy usage compared to cpu utilization over time.
+    def moving_average(a, n=3):
+        ret = np.cumsum(a, dtype=float)
+        ret[n:] = ret[n:] - ret[:-n]
+        return ret[n - 1:] / n
+    fig = plt.figure(figsize=(15,4))
+    ax = fig.subplots(1,3, gridspec_kw={'width_ratios': [10, 1, 1]})
+    ax[0].set_title("Workflow energy usage compared to CPU utilization over time\nRolling average of 15")
+    ax[0].plot(getData('energy1')/3600, color='red', alpha=0.1, zorder=10)
+    ax[0].plot(moving_average(getData('energy1')/3600, 15), color='red', alpha=0.85, zorder=10)
+    ax[0].set_xlabel("Scheduler Cycles")
+    ax[0].set_ylabel("Energy usage (Wh)", color='red')
+    ax[0].set_ylim(bottom=0)
+    ax[0].hlines(np.max(getData('energy1')/3600), -10, len(getData('cpu1'))+10, linestyles='--', color='grey', alpha=0.7, zorder=0)
+    ax[0].hlines(np.min(getData('energy1')/3600), -10, len(getData('cpu1'))+10, linestyles='--', color='grey', alpha=0.7, zorder=0)
+    ax2=ax[0].twinx()
+    ax2.plot(getData('cpu1')*100, color='blue', alpha=0.1, zorder=5)
+    ax2.plot(moving_average(getData('cpu1')*100, 15), color='blue', alpha=0.85, zorder=5)
+    ax2.set_ylabel("CPU Utilization (%)", color='blue')
+    ax2.set_ylim(0,101)
+    ax[0].set_xlim(-10, len(getData('cpu1'))+10)
+
+    # Box plot combined with a violin plot of energy usage.
+    ax[1].set_title("Energy usage\ndistribution")
+    ax[1].set_ylabel("Energy usage (Wh)", color='red')
+    ax[1].set_xlabel("Policy")
+    ax[1].boxplot(getData('energy1')/3600, vert=True, showmeans=True, meanline=True, sym='', whis=1.5)
+    ax[1].violinplot(getData('energy1')/3600, vert=True, showmeans=True)
+    ax[1].set_xticklabels([])
+
+   # Box plot combined with a violin plot of cpu utilization.
+    ax[2].set_title("CPU utilization\ndistribution")
+    ax[2].set_ylabel("CPU Utilization (%)", color='blue')
+    ax[2].set_xlabel("Policy")
+    ax[2].boxplot(getData('cpu1')*100, vert=True, showmeans=True, meanline=True)
+    ax[2].violinplot(getData('cpu1')*100, vert=True, showmeans=True)
+    ax[2].set_xticklabels([])
+
+    plt.tight_layout()
+    plt.subplots_adjust(right=0.97)
+    plt.savefig('combined.png', transparent=True)
     plt.show()
