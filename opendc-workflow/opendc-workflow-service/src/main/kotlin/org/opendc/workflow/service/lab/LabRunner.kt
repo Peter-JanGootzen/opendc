@@ -89,7 +89,7 @@ public class LabRunner(
     /**
      * Run a single [scenario] with the specified seed.
      */
-    fun runScenario(scenario: Scenario, seed: Long) = runSimulation {
+    fun runScenario(scenario: Scenario, seed: Long, iteration: Int) = runSimulation {
         val computeDomain = "compute.opendc.org"
         val workflowDomain = "workflow.opendc.org"
         val topology = clusterTopology(File(envPath, "${scenario.topology.name}.txt"))
@@ -113,15 +113,27 @@ public class LabRunner(
                 ),
             )
 
+            val operationalPhenomena = scenario.operationalPhenomena
+            val failureModel =
+                if (operationalPhenomena.failureFrequency > 0) {
+                    grid5000(Duration.ofSeconds((operationalPhenomena.failureFrequency * 60).roundToLong()))
+                } else {
+                    null
+                }
+
             val service = provisioner.registry.resolve(workflowDomain, WorkflowService::class.java)!!
 
             service.replay(clock, scenario.workload.source.toJobs())
         }
-        monitor.show("testTrace", "results.txt")
+//        monitor.show("testTrace", "results.txt")
 
-        File("results.csv").printWriter().use { out ->
-            out.println("energy, idle_t, active_t, up_t, util")
-            out.println("${monitor.energyUsage.sum() / 3600}, ${monitor.idleTime}, ${monitor.activeTime}, ${monitor.uptime}, ${monitor.cpuUtilization.average()}")
+        if (iteration == 0) {
+            File("results.csv").printWriter().use { out ->
+                out.println("energy, idle_t, active_t, up_t, util")
+                out.print("${monitor.energyUsage.sum() / 3600}, ${monitor.idleTime}, ${monitor.activeTime}, ${monitor.uptime}, ${monitor.cpuUtilization.average()}")
+            }
+        } else {
+            File("results.csv").appendText("\n${monitor.energyUsage.sum() / 3600}, ${monitor.idleTime}, ${monitor.activeTime}, ${monitor.uptime}, ${monitor.cpuUtilization.average()}")
         }
     }
 }

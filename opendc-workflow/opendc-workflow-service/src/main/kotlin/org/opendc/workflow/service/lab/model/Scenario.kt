@@ -46,4 +46,5 @@ public data class Scenario(
     val taskEligibilityPolicy: TaskEligibilityPolicy,
     val taskOrderPolicy: TaskOrderPolicy,
     val allocationPolicy: String,
+    val operationalPhenomena: OperationalPhenomena,
 )

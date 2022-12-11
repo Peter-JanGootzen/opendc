@@ -108,10 +108,16 @@ internal class AnalysisV1 {
             SubmissionTimeJobOrderPolicy(),
             NullTaskEligibilityPolicy,
             RandomTaskOrderPolicy,
-            "lab1" // From a predefined list of computescheduler policies. Custom can be defined there
+            "lab1", // From a predefined list of computescheduler policies. Custom can be defined there
+            OperationalPhenomena(failureFrequency = 24.0 * 7, hasInterference = true),
         )
 
-        assertDoesNotThrow { runner.runScenario(scenario, seed = 0L) }
+        val seed = 0L
+        val repeats = 5
+
+        for (i in 0 until repeats) {
+            assertDoesNotThrow {runner.runScenario(scenario, seed + i.toLong(), i)}
+        }
     }
 
 
