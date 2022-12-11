@@ -140,7 +140,7 @@ internal class WorkflowServiceTest {
         val memory = List(8) { MemoryUnit("Samsung", "Unknown", 2933.0, 16_000) }
 
         //Third value is powerefficiency to be calculated prior by powerEfficiency = (TDP.toDouble() / numberOfCpus) * normalizedSpeed
-        val machineModel = MachineModel(cpus, memory, 100.0)
+        val machineModel = MachineModel(cpus, memory)
 
         return HostSpec(
             UUID(0, uid.toLong()),

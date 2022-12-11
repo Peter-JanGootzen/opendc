@@ -35,7 +35,6 @@ public final class MachineModel {
     private final List<MemoryUnit> memory;
     private final List<NetworkAdapter> net;
     private final List<StorageDevice> storage;
-    private double PowerEfficiency = 0.0;
 
     /**
      * Construct a {@link MachineModel} instance.
@@ -71,17 +70,6 @@ public final class MachineModel {
      */
     public MachineModel(Iterable<ProcessingUnit> cpus, Iterable<MemoryUnit> memory) {
         this(cpus, memory, Collections.emptyList(), Collections.emptyList());
-    }
-    /**
-     * Construct a {@link MachineModel} instance.
-     *
-     * @param cpus The list of processing units available to the image.
-     * @param memory The list of memory units available to the image.
-     * @param PowerEfficiency
-     */
-    public MachineModel(Iterable<ProcessingUnit> cpus, Iterable<MemoryUnit> memory, double PowerEfficiency ) {
-        this(cpus, memory, Collections.emptyList(), Collections.emptyList());
-        this.PowerEfficiency = PowerEfficiency;
     }
 
     /**

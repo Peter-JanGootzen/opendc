@@ -53,10 +53,12 @@ public class HostsProvisioningStep internal constructor(
         val hosts = mutableSetOf<SimHost>()
 
         // By dividing by the number of CPUs we can support multiple CPUs that have differing frequencies
-        val highestFreq = specs.maxOfOrNull { it -> it.model.cpus.sumOf {it.frequency} / it.model.cpus.size }?.apply {
+        specs.maxOfOrNull { it -> it.model.cpus.sumOf {it.frequency} / it.model.cpus.size }?.apply {
             for (spec in specs) {
-                val normalizedSpeed = spec.model.cpus[0].frequency / this
-                spec.meta[HOSTSPEC_POWEREFFICIENCY] = spec.model.cpus[0].tdp / spec.model.cpus.size * normalizedSpeed
+                val freq = spec.model.cpus.sumOf {it.frequency} / spec.model.cpus.size
+                val normalizedSpeed = freq / this
+                val tdp = spec.model.cpus.sumOf { it.tdp }
+                spec.meta[HOSTSPEC_POWEREFFICIENCY] = tdp / spec.model.cpus.size * normalizedSpeed
                 spec.meta[HOSTSPEC_NORMALIZEDSPEED] = normalizedSpeed
             }
         }
