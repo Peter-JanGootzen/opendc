@@ -125,7 +125,7 @@ public class LabRunner(
 
             service.replay(clock, scenario.workload.source.toJobs())
         }
-//        monitor.show("testTrace", "results.txt")
+        monitor.show("testTrace", "results_monitor.csv")
 
         if (iteration == 0) {
             File("results.csv").printWriter().use { out ->
@@ -163,8 +163,6 @@ class TestComputeMonitor : ComputeMonitor {
     var activeTime = 0L
     var stealTime = 0L
     var lostTime = 0L
-    //    var energyUsage = 0.0
-//    var powerUsage = 0.0
     var energyUsage: List<Double> = listOf()
     var powerUsage: List<Double> = listOf()
     var uptime = 0L
@@ -199,8 +197,6 @@ class TestComputeMonitor : ComputeMonitor {
     var serverProvisionTime = ""
     var sysBootTime = ""
     var timestamp = ""
-    //    var serverInfo: ServerInfo? = null
-//    var hostInfo: HostInfo? = null
     var serverInfo: List<ServerInfo?> = listOf()
     var hostInfo: List<HostInfo?> = listOf()
 
@@ -219,92 +215,36 @@ class TestComputeMonitor : ComputeMonitor {
 //        hostInfo += reader.host
     }
 
-    fun sec2date(secondsLong: Long): String {
-        var seconds = secondsLong.toDouble()
-        var minute = 60.0
-        var hour = 60.0 * minute
-        var day = 24.0 * hour
-        var month = 30.0 * day
-        var year = 12.0 * month
-        var years = seconds / year
-        var months = (seconds % year) / month
-        var days = ((seconds % year) % month) / day
-        var hours = (((seconds % year) % month) % day) / hour
-        var minutes = ((((seconds % year) % month) % day) % hour) / minute
-        var seconds2 = (((((seconds % year) % month) % day) % hour) % minute) / seconds
-        return "${years.toInt()}y${months.toInt()}m${days.toInt()}d ${hours.toInt()}h${minutes.toInt()}m${seconds2.toInt()}s"
-    }
-
     fun show(title: String, fPath: String="") {
-        var metrics_str: String = "V===================================\n" +
-            "| ${title} - ComputeMonitor\n" +
-            "|-----------------------------------\n" +
-            "| HostTableReader:\n" +
-            "| \tidleTime = ${idleTime} seconds (${sec2date(idleTime)})\n" +
-            "| \tactiveTime = ${activeTime} seconds (${sec2date(activeTime)})\n" +
-            "| \tstealTime = ${stealTime} seconds (${sec2date(stealTime)})\n" +
-            "| \tlostTime = ${lostTime} seconds (${sec2date(lostTime)})\n" +
-            "| \tenergyUsage (J per cycle):\n" +
-            "| \t\tcontent = ${energyUsage}\n" +
-            "| \t\tcycles = ${energyUsage.size}\n" +
-            "| \t\taverage = ${energyUsage.average()} Joules (${energyUsage.average() / 3600} Wh)\n" +
-            "| \t\ttotal = ${energyUsage.sum()} Joules (${energyUsage.sum() / 3600} Wh)\n" +
-            "| \tpowerUsage (W per cycle):\n" +
-            "| \t\tcontent = ${powerUsage}\n" +
-            "| \t\tcycles = ${powerUsage.size}\n" +
-            "| \t\taverage = ${powerUsage.average()} W\n" +
-            "| \t\ttotal = ${powerUsage.sum()} W\n" +
-            "| \tuptime = ${uptime} ms (${sec2date(uptime / 1000)})\n" +
-            "| \tdowntime = ${downtime} ms (${sec2date(downtime / 1000)})\n" +
-            "| \tcpuLimit = ${cpuLimit} MHz\n" +
-            "| \tcpuDemand = ${cpuDemand} MHz\n" +
-            "| \tcpuUtilization (% per cycle):\n" +
-            "| \t\tcontent = ${cpuUtilization}\n" +
-            "| \t\tcycles = ${cpuUtilization.size}\n" +
-            "| \t\taverage = ${cpuUtilization.average()}%\n" +
-            "| \t\ttotal = ${cpuUtilization.sum()}%\n" +
-            "|-----------------------------------\n" +
-            "| ServiceTableReader:\n" +
-            "| \tattemptsSuccess = ${attemptsSuccess}\n" +
-            "| \tattemptsFailure = ${attemptsFailure}\n" +
-            "| \tattemptsError = ${attemptsError}\n" +
-            "| \tserversPending = ${serversPending}\n" +
-            "| \tserversActive = ${serversActive}\n" +
-            "| \thostsUp = ${hostsUp}\n" +
-            "| \thostsDown = ${hostsDown}\n" +
-            "| \tserversTotal = ${serversTotal}\n" +
-            "|-----------------------------------\n" +
-            "| ServerTableReader:\n" +
-            "| \tcpuLimit = ${serverCpuLimit} MHz\n" +
-            "| \tcpuActiveTime = ${serverCpuActiveTime} seconds (${sec2date(serverCpuActiveTime)})\n" +
-            "| \tcpuIdleTime = ${serverCpuIdleTime} seconds (${sec2date(serverCpuIdleTime)})\n" +
-            "| \tcpuStealTime = ${serverCpuStealTime} seconds (${sec2date(serverCpuStealTime)})\n" +
-            "| \tcpuLostTime = ${serverCpuLostTime} seconds (${sec2date(serverCpuLostTime)})\n" +
-            "| \tsysUptime = ${sysUptime} ms (${sec2date(sysUptime / 1000)})\n" +
-            "| \tsysDowntime = ${sysDowntime} ms (${sec2date(sysDowntime / 1000)})\n" +
-//            "| \tserverProvisionTime = ${serverProvisionTime}\n" +
-//            "| \tsysBootTime = ${sysBootTime}\n" +
-//            "| \ttimestamp = ${timestamp}\n" +
-//            "| \tserverInfo:\n" +
-//            "| \t\tid = ${serverInfo?.id}\n" +
-//            "| \t\tname = ${serverInfo?.name}\n" +
-//            "| \t\ttype = ${serverInfo?.type}\n" +
-//            "| \t\tarch = ${serverInfo?.arch}\n" +
-//            "| \t\timageId = ${serverInfo?.imageId}\n" +
-//            "| \t\timageName = ${serverInfo?.imageName}\n" +
-//            "| \t\tcpuCount = ${serverInfo?.cpuCount}\n" +
-//            "| \t\tmemCapacity = ${serverInfo?.memCapacity}\n" +
-//            "| \thostInfo:\n" +
-//            "| \t\tid = ${hostInfo?.id}\n" +
-//            "| \t\tname = ${hostInfo?.name}\n" +
-//            "| \t\tarch = ${hostInfo?.arch}\n" +
-//            "| \t\tcpuCount = ${hostInfo?.cpuCount}\n" +
-//            "| \t\tmemCapacity = ${hostInfo?.memCapacity}\n" +
-//            "| \tserverInfo = ${hostInfo}\n" +
-//            "| \thostInfo = ${hostInfo}\n" +
-            "Ʌ===================================\n"
+        var metrics: String = "monitor; metric; value; unit\n" +
+            "host; idleTime; ${idleTime}; seconds\n" +
+            "host; activeTime; ${activeTime}; seconds\n" +
+            "host; stealTime; ${stealTime}; seconds\n" +
+            "host; lostTime; ${lostTime}; seconds\n" +
+            "host; energyUsage; ${energyUsage}; J per cycle\n" +
+            "host; powerUsage; ${powerUsage}; W per cycle\n" +
+            "host; uptime; ${uptime}; ms\n" +
+            "host; downtime; ${downtime}; ms\n" +
+            "host; cpuLimit; ${cpuLimit}; MHz\n" +
+            "host; cpuDemand; ${cpuDemand}; MHz\n" +
+            "host; cpuUtilization; ${cpuUtilization}; %\n" +
+            "service; attemptsSuccess; ${attemptsSuccess};\n" +
+            "service; attemptsFailure; ${attemptsFailure};\n" +
+            "service; attemptsError; ${attemptsError};\n" +
+            "service; serversPending; ${serversPending};\n" +
+            "service; serversActive; ${serversActive};\n" +
+            "service; hostsUp; ${hostsUp};\n" +
+            "service; hostsDown; ${hostsDown};\n" +
+            "service; serversTotal; ${serversTotal};\n" +
+            "server; cpuLimit; ${serverCpuLimit}; MHz\n" +
+            "server; cpuActiveTime; ${serverCpuActiveTime}; seconds\n" +
+            "server; cpuIdleTime; ${serverCpuIdleTime}; seconds\n" +
+            "server; cpuStealTime; ${serverCpuStealTime}; seconds\n" +
+            "server; cpuLostTime; ${serverCpuLostTime}; seconds\n" +
+            "server; sysUptime; ${sysUptime}; ms\n" +
+            "server; sysDowntime; ${sysDowntime}; ms\n"
 
-        println(metrics_str)
-        if (fPath != "") { File(fPath).printWriter().use { out -> out.println(metrics_str) } }
+        println(metrics)
+        if (fPath != "") { File(fPath).printWriter().use { out -> out.println(metrics) } }
     }
 }
