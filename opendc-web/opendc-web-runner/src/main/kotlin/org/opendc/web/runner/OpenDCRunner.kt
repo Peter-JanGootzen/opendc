@@ -343,7 +343,7 @@ public class OpenDCRunner(
             val spec = HostSpec(
                 UUID(random.nextLong(), random.nextLong()),
                 "node-$clusterId-$position",
-                mapOf("cluster" to clusterId),
+                mutableMapOf("cluster" to clusterId),
                 MachineModel(processors, memoryUnits),
                 SimPsuFactories.simple(powerModel)
             )

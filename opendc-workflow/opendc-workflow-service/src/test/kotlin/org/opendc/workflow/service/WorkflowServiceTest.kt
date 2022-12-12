@@ -132,15 +132,16 @@ internal class WorkflowServiceTest {
     private fun createHostSpec(uid: Int): HostSpec {
         // Machine model based on: https://www.spec.org/power_ssj2008/results/res2020q1/power_ssj2008-20191125-01012.html
         val node = ProcessingNode("AMD", "am64", "EPYC 7742", 32)
-        val cpus = List(node.coreCount) { ProcessingUnit(node, it, 3400.0) }
+        val cpus = List(node.coreCount) { ProcessingUnit(node, it, 3400.0, 125, true) }
         val memory = List(8) { MemoryUnit("Samsung", "Unknown", 2933.0, 16_000) }
 
+        //Third value is powerefficiency to be calculated prior by powerEfficiency = (TDP.toDouble() / numberOfCpus) * normalizedSpeed
         val machineModel = MachineModel(cpus, memory)
 
         return HostSpec(
             UUID(0, uid.toLong()),
             "host-$uid",
-            emptyMap(),
+            mutableMapOf(),
             machineModel,
             SimPsuFactories.noop(),
             FlowMultiplexerFactory.forwardingMultiplexer()
