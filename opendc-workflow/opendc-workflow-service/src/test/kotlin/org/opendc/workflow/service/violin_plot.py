@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 
 def getData(dataset):
@@ -22,30 +23,37 @@ if __name__ == "__main__":
     data_energy = [getData('energy1'), getData('energy2'), getData('energy3')]
 
     # Box plot combined with a violin plot of cpu utilization.
-    fig = plt.figure(figsize=(6,3))
+    fig = plt.figure(figsize=(7,4.5))
     ax = fig.subplots()
     ax.set_title("Workflow CPU Utilization per policy")
     ax.set_xlabel("CPU Utilization (%)")
     ax.set_ylabel("Policy")
-    ax.boxplot(data_cpuUtil, vert=False, showmeans=True, meanline=True)
-    ax.violinplot(data_cpuUtil, vert=False, showmeans=True)
-    ax.set_yticklabels(['Default', 'SizeJobOrderPolicy', 'RandomTaskEligibilityPolicy'])
+    ax.boxplot([i*100 for i in reversed(data_cpuUtil)], vert=False, showmeans=True, meanline=True, sym='', whis=2, widths=0.3)
+    ax.violinplot([i*100 for i in reversed(data_cpuUtil)], vert=False, showmeans=True, widths=0.7)
+    ax.set_yticklabels(reversed(['Def', 'SJO', 'RTE'])) # 'Default', 'SizeJobOrderPolicy', 'RandomTaskEligibilityPolicy'
+#     ax.set_xlim(-1,101)
     plt.tight_layout()
     plt.savefig('cpuUtil.png', transparent=True)
     plt.show()
 
     # Box plot combined with a violin plot of energy usage.
-    fig = plt.figure(figsize=(6,3))
+    fig = plt.figure(figsize=(7,4.5))
     ax = fig.subplots()
     ax.set_title("Workflow energy usage per policy")
     ax.set_xlabel("Energy usage (Wh)")
     ax.set_ylabel("Policy")
-    ax.boxplot([i/3600 for i in data_energy], vert=False, showmeans=True, meanline=True)
-    ax.violinplot([i/3600 for i in data_energy], vert=False, showmeans=True)
-    ax.set_yticklabels(['Default', 'SizeJobOrderPolicy', 'RandomTaskEligibilityPolicy'])
+    ax.boxplot([i/3600 for i in reversed(data_energy)], vert=False, showmeans=True, meanline=True, sym='', whis=2, widths=0.3)
+    ax.violinplot([i/3600 for i in reversed(data_energy)], vert=False, showmeans=True, widths=0.7)
+    ax.set_yticklabels(reversed(['Def', 'SJO', 'RTE'])) # 'Default', 'SizeJobOrderPolicy', 'RandomTaskEligibilityPolicy'
+    ax.set_xlim(np.min([np.min(i/3600) for i in data_energy])-2, np.max([np.max(i/3600) for i in data_energy])+1)
+#     ax.plot([], [], ' ', label="Def = Default policy")
+#     ax.plot([], [], ' ', label="SJO = Size Job Order Policy")
+#     ax.plot([], [], ' ', label="RTE = Random Task Eligibility Policy")
+#     plt.legend()
     plt.tight_layout()
     plt.savefig('energyUse.png', transparent=True)
     plt.show()
+
 
     # Line plot of energy usage compared to cpu utilization over time.
     def moving_average(a, n=3):
@@ -94,7 +102,7 @@ if __name__ == "__main__":
     ax2.plot(getData('cpu1')*100, color='blue', alpha=0.1, zorder=5)
     ax2.plot(moving_average(getData('cpu1')*100, 15), color='blue', alpha=0.85, zorder=5)
     ax2.set_ylabel("CPU Utilization (%)", color='blue')
-    ax2.set_ylim(0,101)
+    ax2.set_ylim(0,100)
     ax[0].set_xlim(-10, len(getData('cpu1'))+10)
 
     # Box plot combined with a violin plot of energy usage.
@@ -102,7 +110,12 @@ if __name__ == "__main__":
     ax[1].set_ylabel("Energy usage (Wh)", color='red')
     ax[1].set_xlabel("Policy")
     ax[1].boxplot(getData('energy1')/3600, vert=True, showmeans=True, meanline=True, sym='', whis=1.5)
-    ax[1].violinplot(getData('energy1')/3600, vert=True, showmeans=True)
+    violin_parts  = ax[1].violinplot(getData('energy1')/3600, vert=True, showmeans=True)
+    for pc in violin_parts['bodies']:
+        pc.set_facecolor('red')
+        pc.set_edgecolor('black')
+#         pc.set_alpha(1)
+    ax[1].set_ylim(bottom=0)
     ax[1].set_xticklabels([])
 
    # Box plot combined with a violin plot of cpu utilization.
@@ -110,8 +123,13 @@ if __name__ == "__main__":
     ax[2].set_ylabel("CPU Utilization (%)", color='blue')
     ax[2].set_xlabel("Policy")
     ax[2].boxplot(getData('cpu1')*100, vert=True, showmeans=True, meanline=True)
-    ax[2].violinplot(getData('cpu1')*100, vert=True, showmeans=True)
+    violin_parts  = ax[2].violinplot(getData('cpu1')*100, vert=True, showmeans=True)
+    for pc in violin_parts['bodies']:
+        pc.set_facecolor('blue')
+        pc.set_edgecolor('black')
+#         pc.set_alpha(1)
     ax[2].set_xticklabels([])
+    ax[2].set_ylim(0,100)
 
     plt.tight_layout()
     plt.subplots_adjust(right=0.97)
