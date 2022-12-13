@@ -28,6 +28,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.opendc.compute.service.scheduler.ComputeScheduler
 import org.opendc.compute.service.scheduler.FilterScheduler
+import org.opendc.compute.service.scheduler.TaskFlowScheduler
 import org.opendc.compute.service.scheduler.filters.ComputeFilter
 import org.opendc.compute.service.scheduler.filters.RamFilter
 import org.opendc.compute.service.scheduler.filters.VCpuFilter
@@ -54,8 +55,10 @@ import org.opendc.workflow.service.scheduler.job.SubmissionTimeJobOrderPolicy
 import org.opendc.workflow.service.scheduler.task.NullTaskEligibilityPolicy
 import org.opendc.workflow.service.scheduler.task.RandomTaskOrderPolicy
 import org.opendc.workflow.service.scheduler.task.SubmissionTimeTaskOrderPolicy
+import org.opendc.workflow.service.scheduler.task.TaskFlowTaskEligibilityPolicy
 import java.nio.file.Paths
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 /**
@@ -73,9 +76,8 @@ internal class WorkflowServiceTest {
 
         Provisioner(coroutineContext, clock, seed = 0L).use { provisioner ->
             val scheduler: (ProvisioningContext) -> ComputeScheduler = {
-                FilterScheduler(
-                    filters = listOf(ComputeFilter(), VCpuFilter(1.0), RamFilter(1.0)),
-                    weighers = listOf(VCpuWeigher(1.0, multiplier = 1.0))
+                TaskFlowScheduler(
+                    clock = clock,
                 )
             }
 
@@ -92,8 +94,8 @@ internal class WorkflowServiceTest {
                         schedulingQuantum = Duration.ofMillis(100),
                         jobAdmissionPolicy = NullJobAdmissionPolicy,
                         jobOrderPolicy = SubmissionTimeJobOrderPolicy(),
-                        taskEligibilityPolicy = NullTaskEligibilityPolicy,
-                        taskOrderPolicy = RandomTaskOrderPolicy
+                        taskEligibilityPolicy = TaskFlowTaskEligibilityPolicy(clock),
+                        taskOrderPolicy = SubmissionTimeTaskOrderPolicy()
                     )
                 )
             )
@@ -104,7 +106,7 @@ internal class WorkflowServiceTest {
                 Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
                 format = "gwf"
             )
-            service.replay(clock, trace.toJobs())
+            service.replay(clock, trace.toJobs(Instant.ofEpochSecond(500)))
 
             val metrics = service.getSchedulerStats()
 
@@ -131,15 +133,16 @@ internal class WorkflowServiceTest {
     private fun createHostSpec(uid: Int): HostSpec {
         // Machine model based on: https://www.spec.org/power_ssj2008/results/res2020q1/power_ssj2008-20191125-01012.html
         val node = ProcessingNode("AMD", "am64", "EPYC 7742", 32)
-        val cpus = List(node.coreCount) { ProcessingUnit(node, it, 3400.0) }
+        val cpus = List(node.coreCount) { ProcessingUnit(node, it, 3400.0, 125, true) }
         val memory = List(8) { MemoryUnit("Samsung", "Unknown", 2933.0, 16_000) }
 
+        //Third value is powerefficiency to be calculated prior by powerEfficiency = (TDP.toDouble() / numberOfCpus) * normalizedSpeed
         val machineModel = MachineModel(cpus, memory)
 
         return HostSpec(
             UUID(0, uid.toLong()),
             "host-$uid",
-            emptyMap(),
+            mutableMapOf(),
             machineModel,
             SimPsuFactories.noop(),
             FlowMultiplexerFactory.forwardingMultiplexer()

@@ -165,7 +165,7 @@ public class WorkflowServiceImpl(
     }
 
     override suspend fun invoke(job: Job): Unit = suspendCancellableCoroutine { cont ->
-        // J1 Incoming Jobs
+        // J1 Incoming Jobs, the Job is submitted to the system
         val jobInstance = JobState(job, clock.millis(), cont)
         val instances = job.tasks.associateWith {
             TaskState(jobInstance, it)
@@ -184,8 +184,12 @@ public class WorkflowServiceImpl(
 
             _tasksSubmitted++
         }
-
         instances.values.toCollection(jobInstance.tasks)
+
+        // All the states have been created
+        // Now we compute the slack of the Job
+        jobInstance.computeSlack()
+
         incomingJobs += jobInstance
         rootListener.jobSubmitted(jobInstance)
         _workflowsSubmitted++
