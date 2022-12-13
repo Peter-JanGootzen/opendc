@@ -213,13 +213,12 @@ if __name__ == "__main__":
     ax[1][0].set_xlabel("Scheduler Cycles")
     ax[1][0].set_xlim(-10, len(data_cpuUtil[0])+10)
     labels = [str(int(i)) for i in ax[1][0].get_yticks()]
-    labels[-1] = labels[-2] = ''
+    # labels[-1] = labels[-2] = ''
     ax[1][0].set_yticklabels(labels)
 
     ax[1][1].set_visible(False)
     ax[1][2].set_visible(False)
 
-    # fig.autofmt_xdate()
     plt.tight_layout()
     plt.savefig('combined.png', transparent=True)
     plt.show()
@@ -229,73 +228,120 @@ if __name__ == "__main__":
     # Plot trace information.                                                 #
     ###########################################################################
 
-    # Process trace data.
-    workflow_id = np.array(trace['WorkflowID']).astype(int)
-    job_id = np.array(trace['JobID']).astype(int)
-    submit_time = np.array(trace['SubmitTime']).astype(int)
-    run_time = np.array(trace['RunTime']).astype(int)
-    n_procs = np.array(trace['NProcs']).astype(int)
-    req_n_procs = np.array(trace['ReqNProcs']).astype(int)
-    dependencies = np.array([np.array(entry.split(' ')).astype(int) if entry != '' else np.array([]) for entry in trace['Dependencies']], dtype=object)
+    data2 = getData('../../../../../../../results_monitor2.csv')
+    data_energy2 = [np.array(data2['energyUsage'][0]).astype(float)]
+    data_cpuUtil2 = [np.array(data2['cpuUtilization'][0]).astype(float)]
+    data3 = getData('../../../../../../../results_monitor3.csv')
+    data_energy3 = [np.array(data3['energyUsage'][0]).astype(float)]
+    data_cpuUtil3 = [np.array(data3['cpuUtilization'][0]).astype(float)]
 
-    # Compute the active jobs at each timestep.
-    def compute_active_jobs(job_id, workflow_id, submit_time, run_time, dependencies):
-        print("Computing active jobs per epoch from trace...")
-        jobs_over_time = dict()
-        active_jobs = set()
-        waiting_jobs = set()
-        finished_jobs = []
+    data_energy_ls = [data_energy[0]/3600, data_energy3[0]/3600, data_energy2[0]/3600]
+    data_cpuUtil_ls = [data_cpuUtil[0]*100, data_cpuUtil3[0]*100, data_cpuUtil2[0]*100]
 
-        # Sort input data by submit time.
-        sorted_indices = np.argsort(submit_time)
-        job_id = job_id[sorted_indices]
-        workflow_id = dict(zip(job_id, workflow_id[sorted_indices]))
-        submit_time = dict(zip(job_id, submit_time[sorted_indices]))
-        run_time = dict(zip(job_id, run_time[sorted_indices]))
-        dependencies = dict(zip(job_id, dependencies[sorted_indices]))
+    fig = plt.figure(figsize=(15,4.5))
+    plt.rcParams.update({'font.size': 14})
+    ax = fig.subplots(1, 2)
 
-        # Iterate over all timesteps.
-        time = 0
-        waiting_jobs = list(job_id)
-        while len(finished_jobs) != len(job_id):
-            # Add the active jobs to the list.
-            jobs_over_time[time] = list(active_jobs)
+    # Box plot combined with a violin plot of energy usage.
+    ax[0].set_title("Energy usage per policy")
+    ax[0].set_xlabel("Energy usage (Wh)")
+    ax[0].boxplot(data_energy_ls, vert=False, showmeans=True, meanline=True, sym='', whis=2, widths=0.3)
+    violin_parts = ax[0].violinplot(data_energy_ls, vert=False, showmeans=True, widths=0.8)
+    for pc in violin_parts['bodies']:
+        pc.set_facecolor('red')
+        pc.set_edgecolor('black')
+    ax[0].set_yticklabels(reversed(['Filter', 'Random', 'TaskFlow']))
 
-            # Check if any jobs have become active.
-            for job in waiting_jobs:
-                # Check if the job's submit time has arrived.
-                if submit_time[job] <= time:
-                    # Check if the job's dependencies have finished.
-                    if len(dependencies[job]) == 0 or np.all(np.isin(dependencies[job], finished_jobs)):
-                        waiting_jobs.remove(job)
-                        active_jobs.add(job)
+    # Box plot combined with a violin plot of cpu utilization.
+    ax[1].set_title("CPU Utilization per policy")
+    ax[1].set_xlabel("CPU Utilization (%)")
+    ax[1].boxplot(data_cpuUtil_ls, vert=False, showmeans=True, meanline=True, sym='', whis=2, widths=0.3)
+    violin_parts = ax[1].violinplot(data_cpuUtil_ls, vert=False, showmeans=True, widths=0.8)
+    for pc in violin_parts['bodies']:
+        pc.set_facecolor('blue')
+        pc.set_edgecolor('black')
+    ax[1].set_yticklabels(reversed(['Filter', 'Random', 'TaskFlow']))
 
-            # Check if any jobs have finished.
-            for job in active_jobs.copy():
-                if run_time[job] == 0:
-                    active_jobs.remove(job)
-                    finished_jobs.append(job)
-                else:
-                    run_time[job] -= 1
+    plt.subplots_adjust(left=0.1,
+                        bottom=0.140,
+                        right=0.9,
+                        top=0.9,
+                        wspace=0.4,
+                        hspace=0.4)
+    plt.savefig('energy_cpu_dist.png', transparent=True)
+    plt.show()
 
-            time += 1
-
-            print(round(len(finished_jobs)/len(job_id)*100,2), '%', end='\r')
-
-        return jobs_over_time
-
-#     jobs_over_time = compute_active_jobs(job_id, workflow_id, submit_time, run_time, dependencies)
-#
-#     # Plot trace data.
-#     fig = plt.figure(figsize=(12.5,4))
-#     ax = fig.subplots()
-#     ax.set_title("Active jobs over time")
-#     ax.set_xlabel("Time (s)")
-#     ax.set_ylabel("Number of active jobs")
-#     ax.set_xlim(0, max(jobs_over_time.keys()))
-#     ax.set_ylim(0, max([len(jobs) for jobs in jobs_over_time.values()]))
-#     for time, jobs in jobs_over_time.items():
-#         ax.scatter(time, len(jobs), color='black', s=1)
-#     plt.tight_layout()
-#     plt.savefig('trace.png', transparent=True)
-#     plt.show()
+    ###########################################################################
+    # Plot trace information.                                                 #
+    ###########################################################################
+    #
+    # # Process trace data.
+    # workflow_id = np.array(trace['WorkflowID']).astype(int)
+    # job_id = np.array(trace['JobID']).astype(int)
+    # submit_time = np.array(trace['SubmitTime']).astype(int)
+    # run_time = np.array(trace['RunTime']).astype(int)
+    # n_procs = np.array(trace['NProcs']).astype(int)
+    # req_n_procs = np.array(trace['ReqNProcs']).astype(int)
+    # dependencies = np.array([np.array(entry.split(' ')).astype(int) if entry != '' else np.array([]) for entry in trace['Dependencies']], dtype=object)
+    #
+    # # Compute the active jobs at each timestep.
+    # def compute_active_jobs(job_id, workflow_id, submit_time, run_time, dependencies):
+    #     print("Computing active jobs per epoch from trace...")
+    #     jobs_over_time = dict()
+    #     active_jobs = set()
+    #     waiting_jobs = set()
+    #     finished_jobs = []
+    #
+    #     # Sort input data by submit time.
+    #     sorted_indices = np.argsort(submit_time)
+    #     job_id = job_id[sorted_indices]
+    #     workflow_id = dict(zip(job_id, workflow_id[sorted_indices]))
+    #     submit_time = dict(zip(job_id, submit_time[sorted_indices]))
+    #     run_time = dict(zip(job_id, run_time[sorted_indices]))
+    #     dependencies = dict(zip(job_id, dependencies[sorted_indices]))
+    #
+    #     # Iterate over all timesteps.
+    #     time = 0
+    #     waiting_jobs = list(job_id)
+    #     while len(finished_jobs) != len(job_id):
+    #         # Add the active jobs to the list.
+    #         jobs_over_time[time] = list(active_jobs)
+    #
+    #         # Check if any jobs have become active.
+    #         for job in waiting_jobs:
+    #             # Check if the job's submit time has arrived.
+    #             if submit_time[job] <= time:
+    #                 # Check if the job's dependencies have finished.
+    #                 if len(dependencies[job]) == 0 or np.all(np.isin(dependencies[job], finished_jobs)):
+    #                     waiting_jobs.remove(job)
+    #                     active_jobs.add(job)
+    #
+    #         # Check if any jobs have finished.
+    #         for job in active_jobs.copy():
+    #             if run_time[job] == 0:
+    #                 active_jobs.remove(job)
+    #                 finished_jobs.append(job)
+    #             else:
+    #                 run_time[job] -= 1
+    #
+    #         time += 1
+    #
+    #         print(round(len(finished_jobs)/len(job_id)*100,2), '%', end='\r')
+    #
+    #     return jobs_over_time
+    #
+    # jobs_over_time = compute_active_jobs(job_id, workflow_id, submit_time, run_time, dependencies)
+    #
+    # # Plot trace data.
+    # fig = plt.figure(figsize=(12.5,4))
+    # ax = fig.subplots()
+    # ax.set_title("Active jobs over time")
+    # ax.set_xlabel("Time (s)")
+    # ax.set_ylabel("Number of active jobs")
+    # ax.set_xlim(0, max(jobs_over_time.keys()))
+    # ax.set_ylim(0, max([len(jobs) for jobs in jobs_over_time.values()]))
+    # for time, jobs in jobs_over_time.items():
+    #     ax.scatter(time, len(jobs), color='black', s=1)
+    # plt.tight_layout()
+    # plt.savefig('trace.png', transparent=True)
+    # plt.show()

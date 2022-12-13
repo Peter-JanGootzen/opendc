@@ -75,6 +75,7 @@ import org.opendc.workflow.service.scheduler.task.NullTaskEligibilityPolicy
 import org.opendc.workflow.service.scheduler.task.RandomTaskEligibilityPolicy
 import org.opendc.workflow.service.scheduler.task.RandomTaskOrderPolicy
 import org.opendc.workflow.service.scheduler.task.SubmissionTimeTaskOrderPolicy
+import org.opendc.workflow.service.scheduler.task.TaskFlowTaskEligibilityPolicy
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -94,7 +95,7 @@ internal class AnalysisV1 {
     @Test
     fun testRunner() {
         val envPath = File("src/test/resources/env")
-        val outPath = "results_monitor.csv"
+        val outPath = "results_monitor3.csv"
         val trace = Trace.open(
             Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
             format = "gwf"
@@ -107,8 +108,8 @@ internal class AnalysisV1 {
             Duration.ofMillis(100),
             NullJobAdmissionPolicy,
             SubmissionTimeJobOrderPolicy(),
-            NullTaskEligibilityPolicy,
-            RandomTaskOrderPolicy,
+            NullTaskEligibilityPolicy, // TaskFlowTaskEligibilityPolicy(clock),
+            SubmissionTimeTaskOrderPolicy(), // RandomTaskOrderPolicy
             "taskflow", // From a predefined list of computescheduler policies. Custom can be defined there
             OperationalPhenomena(failureFrequency = 24.0 * 7, hasInterference = true),
         )
