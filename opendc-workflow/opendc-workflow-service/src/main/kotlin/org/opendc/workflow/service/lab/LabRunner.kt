@@ -85,6 +85,7 @@ import kotlin.math.roundToLong
 
 public class LabRunner(
     private val envPath: File,
+    private val outPath: String,
 ) {
     /**
      * Run a single [scenario] with the specified seed.
@@ -128,12 +129,12 @@ public class LabRunner(
 //        monitor.show("testTrace", "results.txt")
 
         if (iteration == 0) {
-            File("results.csv").printWriter().use { out ->
+            File(outPath).printWriter().use { out ->
                 out.println("energy, idle_t, active_t, up_t, util")
                 out.print("${monitor.energyUsage.sum() / 3600}, ${monitor.idleTime}, ${monitor.activeTime}, ${monitor.uptime}, ${monitor.cpuUtilization.average()}")
             }
         } else {
-            File("results.csv").appendText("\n${monitor.energyUsage.sum() / 3600}, ${monitor.idleTime}, ${monitor.activeTime}, ${monitor.uptime}, ${monitor.cpuUtilization.average()}")
+            File(outPath).appendText("\n${monitor.energyUsage.sum() / 3600}, ${monitor.idleTime}, ${monitor.activeTime}, ${monitor.uptime}, ${monitor.cpuUtilization.average()}")
         }
     }
 }

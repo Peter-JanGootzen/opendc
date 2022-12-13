@@ -27,7 +27,7 @@ import org.opendc.workflow.service.lab.model.Scenario
 import org.opendc.workflow.service.lab.model.OperationalPhenomena
 import org.opendc.workflow.service.lab.model.Topology
 import org.opendc.workflow.service.lab.model.Workload
-import org.opendc.experiments.compute.trace
+//import org.opendc.experiments.compute.trace
 
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -50,7 +50,7 @@ import org.opendc.experiments.compute.telemetry.table.ServerInfo
 import org.opendc.experiments.compute.telemetry.table.ServerTableReader
 import org.opendc.experiments.compute.telemetry.table.ServiceTableReader
 import org.opendc.experiments.compute.topology.HostSpec
-import org.opendc.experiments.compute.trace
+//import org.opendc.experiments.compute.trace
 import org.opendc.experiments.provisioner.Provisioner
 import org.opendc.experiments.provisioner.ProvisioningContext
 import org.opendc.experiments.workflow.WorkflowSchedulerSpec
@@ -94,12 +94,13 @@ internal class AnalysisV1 {
     @Test
     fun testRunner() {
         val envPath = File("src/test/resources/env")
+        val outPath = "results2.csv"
         val trace = Trace.open(
             Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
             format = "gwf"
         )
 
-        val runner = LabRunner(envPath)
+        val runner = LabRunner(envPath, outPath)
         val scenario = Scenario(
             Topology("topology"),
             Workload("test", trace),
