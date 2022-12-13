@@ -31,6 +31,8 @@ public final class ProcessingUnit {
     private final ProcessingNode node;
     private final int id;
     private final double frequency;
+    private int tdp = 0;
+    private boolean dvfs = false;
 
     /**
      * Construct a {@link ProcessingUnit} instance.
@@ -43,6 +45,23 @@ public final class ProcessingUnit {
         this.node = node;
         this.id = id;
         this.frequency = frequency;
+    }
+
+    /**
+     * Construct a {@link ProcessingUnit} instance that is energy aware.
+     *
+     * @param node The processing node containing the CPU core.
+     * @param id The identifier of the CPU core within the processing node.
+     * @param frequency The clock rate of the CPU in MHz.
+     * @param tdp The tdp of the CPU in watts
+     * @param dvfs Whether or not the CPU supports Dynamic Variable Frequency Scaling.
+     */
+    public ProcessingUnit(ProcessingNode node, int id, double frequency, int tdp, boolean dvfs) {
+        this.node = node;
+        this.id = id;
+        this.frequency = frequency;
+        this.tdp = tdp;
+        this.dvfs = dvfs;
     }
 
     /**
@@ -65,6 +84,9 @@ public final class ProcessingUnit {
     public double getFrequency() {
         return frequency;
     }
+
+    public int getTdp(){return tdp;}
+    public boolean getDvfs(){return dvfs;}
 
     @Override
     public boolean equals(Object o) {
