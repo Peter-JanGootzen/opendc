@@ -42,10 +42,12 @@ import kotlin.math.min
  * @param subsetSize The size of the subset of best hosts from which a target is randomly chosen.
  * @param random A [Random] instance for selecting
  */
+
+
 public class TaskFlowScheduler(
     private val clock: Clock,
     private val subsetSize: Int = 1,
-    private val random: Random = Random(0)
+    private val random: Random = Random(0),
 ) : ComputeScheduler {
     /**
      * The pool of hosts available to the scheduler.
@@ -55,6 +57,8 @@ public class TaskFlowScheduler(
     private val WORKFLOW_TASK_SLACK: String = "workflow:task:slack"
     private val WORKFLOW_TASK_MINIMAL_START_TIME: String = "workflow:task:minimalStartTime"
     private val TASK_WORKLOAD: String = "workload_flops"
+    private val HOSTSPEC_NORMALIZEDSPEED: String = "hostspec:normalizedSpeed"
+    private val HOSTSPEC_POWEREFFICIENCY: String = "hostspec:powerEfficiency"
 
     init {
         require(subsetSize >= 1) { "Subset size must be one or greater" }
@@ -95,15 +99,28 @@ public class TaskFlowScheduler(
 
 
         // TODO:
-        //   - Filter hosts by cores available
-        //   - Filter hosts by memory available
-        //   - Somehow get the performance/watt for every machine
+        //   - Filter hosts by cores available -done
+        //   - Filter hosts by memory available -done
+        //   - Somehow get the performance/watt for every machine -done
         //   - Provision on the most power efficient host that we can manage given the slack
+        var filteredHosts: MutableList<HostView> = hosts
+        filteredHosts = filteredHosts.filter { host -> (host.host.model.cpuCount - host.provisionedCores) > cpuDemand } as MutableList<HostView>
+        filteredHosts = filteredHosts.filter { host -> (host.availableMemory) > ramDemand } as MutableList<HostView>
 
+        val subset = filteredHosts.sortedWith(Comparator<HostView>{ a, b ->
+            val eff1: Double = a.host.meta.getOrDefault(HOSTSPEC_POWEREFFICIENCY, 1000) as Double
+            val eff2: Double = b.host.meta.getOrDefault(HOSTSPEC_POWEREFFICIENCY, 1000) as Double
+            when {
+                eff1 > eff2 -> 1
+                eff1 < eff2 -> -1
+                else -> 0
+            }
+        }) as MutableList<HostView>
         // Example of how to get data from hostView.
         val host = hosts.get(0)
         val cpuLeft = host.host.model.cpuCount - host.provisionedCores
         val ramLeft = host.availableMemory
+
 
         // Voodoo starts here..
         // We can access the baremetal host using Java reflection.
@@ -112,8 +129,6 @@ public class TaskFlowScheduler(
 //        val machine = host.host.javaClass.getDeclaredField("machine")
 //        val machineFields: SimBareMetalMachine = machine.javaClass.declaredFields
 
-
-        val subset = hosts
         return when (val maxSize = min(subsetSize, subset.size)) {
             0 -> null
             1 -> subset[0]
