@@ -27,6 +27,7 @@ package org.opendc.experiments.compute
 import org.opendc.compute.service.scheduler.ComputeScheduler
 import org.opendc.compute.service.scheduler.FilterScheduler
 import org.opendc.compute.service.scheduler.ReplayScheduler
+import org.opendc.compute.service.scheduler.TaskFlowScheduler
 import org.opendc.compute.service.scheduler.filters.ComputeFilter
 import org.opendc.compute.service.scheduler.filters.RamFilter
 import org.opendc.compute.service.scheduler.filters.VCpuFilter
@@ -35,11 +36,12 @@ import org.opendc.compute.service.scheduler.weights.InstanceCountWeigher
 import org.opendc.compute.service.scheduler.weights.RamWeigher
 import org.opendc.compute.service.scheduler.weights.VCpuWeigher
 import java.util.Random
+import java.time.Clock
 
 /**
  * Create a [ComputeScheduler] for the experiment.
  */
-public fun createComputeScheduler(name: String, seeder: Random, placements: Map<String, String> = emptyMap()): ComputeScheduler {
+public fun createComputeScheduler(name: String, seeder: Random, clock : Clock, placements: Map<String, String> = emptyMap()): ComputeScheduler {
     val cpuAllocationRatio = 16.0
     val ramAllocationRatio = 1.5
     return when (name) {
@@ -84,6 +86,9 @@ public fun createComputeScheduler(name: String, seeder: Random, placements: Map<
             weighers = emptyList(),
             subsetSize = Int.MAX_VALUE,
             random = Random(seeder.nextLong())
+        )
+        "taskflow" -> TaskFlowScheduler(
+            clock = clock,
         )
         "replay" -> ReplayScheduler(placements)
         else -> throw IllegalArgumentException("Unknown policy $name")
