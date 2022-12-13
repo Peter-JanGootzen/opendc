@@ -94,7 +94,7 @@ internal class AnalysisV1 {
     @Test
     fun testRunner() {
         val envPath = File("src/test/resources/env")
-        val outPath = "results2.csv"
+        val outPath = "results_monitor.csv"
         val trace = Trace.open(
             Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
             format = "gwf"
@@ -119,72 +119,5 @@ internal class AnalysisV1 {
         for (i in 0 until repeats) {
             assertDoesNotThrow {runner.runScenario(scenario, seed + i.toLong(), i)}
         }
-    }
-
-
-    @Test
-    fun testTrace() = runSimulation {
-        val computeService = "compute.opendc.org"
-        val workflowService = "workflow.opendc.org"
-
-        Provisioner(coroutineContext, clock, seed = 0L).use { provisioner ->
-            val scheduler: (ProvisioningContext) -> ComputeScheduler = {
-                FilterScheduler(
-                    filters = listOf(ComputeFilter(), VCpuFilter(1.0), RamFilter(1.0)),
-                    weighers = listOf(VCpuWeigher(1.0, multiplier = 1.0))
-                )
-            }
-
-            provisioner.runSteps(
-                // Configure the ComputeService that is responsible for mapping virtual machines onto physical hosts
-                setupComputeService(computeService, scheduler, schedulingQuantum = Duration.ofSeconds(1)),
-                setupHosts(computeService, List(4) { createHostSpec(it) }),
-
-                // Configure the WorkflowService that is responsible for scheduling the workflow tasks onto machines
-                setupWorkflowService(
-                    workflowService,
-                    computeService,
-                    WorkflowSchedulerSpec(
-                        schedulingQuantum = Duration.ofMillis(100),
-                        jobAdmissionPolicy = NullJobAdmissionPolicy,
-//                        jobAdmissionPolicy = LimitJobAdmissionPolicy(0),
-                        jobOrderPolicy = SubmissionTimeJobOrderPolicy(),
-//                        jobOrderPolicy = SizeJobOrderPolicy(),
-                        taskEligibilityPolicy = NullTaskEligibilityPolicy,
-//                        taskEligibilityPolicy = RandomTaskEligibilityPolicy(),
-                        taskOrderPolicy = RandomTaskOrderPolicy
-                    )
-                ),
-            )
-
-            val service = provisioner.registry.resolve(workflowService, WorkflowService::class.java)!!
-
-            val trace = Trace.open(
-                Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
-                format = "gwf"
-            )
-            service.replay(clock, trace.toJobs())
-        }
-    }
-
-    /**
-     * Construct a [HostSpec] for a simulated host.
-     */
-    private fun createHostSpec(uid: Int): HostSpec {
-        // Machine model based on: https://www.spec.org/power_ssj2008/results/res2020q1/power_ssj2008-20191125-01012.html
-        val node = ProcessingNode("AMD", "am64", "EPYC 7742", 32)
-        val cpus = List(node.coreCount) { ProcessingUnit(node, it, 3400.0) }
-        val memory = List(8) { MemoryUnit("Samsung", "Unknown", 2933.0, 16_000) }
-
-        val machineModel = MachineModel(cpus, memory)
-
-        return HostSpec(
-            UUID(0, uid.toLong()),
-            "host-$uid",
-            emptyMap(),
-            machineModel,
-            SimPsuFactories.simple(CpuPowerModels.linear(350.0, 200.0)), /* TODO: REALISTIC POWER VALUES */
-            FlowMultiplexerFactory.forwardingMultiplexer()
-        )
     }
 }
