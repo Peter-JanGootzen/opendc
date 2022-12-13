@@ -41,23 +41,25 @@ import org.opendc.workflow.api.Job
 import org.opendc.workflow.api.Task
 import org.opendc.workflow.api.WORKFLOW_TASK_CORES
 import org.opendc.workflow.api.WORKFLOW_TASK_DEADLINE
+import org.opendc.workflow.api.WORKFLOW_TASK_MINIMAL_START_TIME
 import org.opendc.workflow.service.WorkflowService
 import java.time.Clock
 import java.util.UUID
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.math.min
+import java.time.Instant
 
 /**
  * Convert [Trace] into a list of [Job]s that can be submitted to the workflow service.
  */
-public fun Trace.toJobs(): List<Job> {
+public fun Trace.toJobs(submitTimeLimit: Instant = Instant.MAX): List<Job> {
     val table = checkNotNull(getTable(TABLE_TASKS))
     val reader = table.newReader()
 
     val jobs = mutableMapOf<Long, Job>()
-    val tasks = mutableMapOf<Long, Task>()
-    val taskDependencies = mutableMapOf<Task, Set<Long>>()
+    val tasks = mutableMapOf<UUID, Task>()
+    val taskDependencies = mutableMapOf<Task, Set<UUID>>()
 
     try {
         while (reader.nextRow()) {
@@ -66,30 +68,35 @@ public fun Trace.toJobs(): List<Job> {
             val workflow = jobs.computeIfAbsent(workflowId) { id -> Job(UUID(0L, id), "<unnamed>", HashSet(), HashMap()) }
 
             val id = reader.getString(TASK_ID)!!.toLong()
+            val uid = UUID(0L, id)
             val grantedCpus = if (reader.resolve(TASK_ALLOC_NCPUS) != 0) {
                 reader.getInt(TASK_ALLOC_NCPUS)
             } else {
                 reader.getInt(TASK_REQ_NCPUS)
             }
             val submitTime = reader.getInstant(TASK_SUBMIT_TIME)!!
+            if (submitTime > submitTimeLimit) {
+                continue
+            }
             val runtime = reader.getDuration(TASK_RUNTIME)!!
             val flops: Long = 4000 * runtime.seconds * grantedCpus
             val workload = SimWorkloads.flops(flops, 1.0)
             val task = Task(
-                UUID(0L, id),
+                uid,
                 "<unnamed>",
                 HashSet(),
                 mutableMapOf(
                     "workload" to workload,
                     "workload_flops" to flops,
                     WORKFLOW_TASK_CORES to grantedCpus,
-                    WORKFLOW_TASK_DEADLINE to runtime.toMillis()
+                    WORKFLOW_TASK_DEADLINE to runtime.toMillis(),
+                    // Called deadline, but filled with runtime???
+                    WORKFLOW_TASK_MINIMAL_START_TIME to 0
                 )
             )
 
-            tasks[id] = task
-            taskDependencies[task] = reader.getSet(TASK_PARENTS, String::class.java)!!.map { it.toLong() }.toSet()
-
+            tasks[uid] = task
+            taskDependencies[task] = reader.getSet(TASK_PARENTS, String::class.java)!!.map { UUID(0L, it.toLong() ) }.toSet()
             (workflow.metadata as MutableMap<String, Any>).merge("WORKFLOW_SUBMIT_TIME", submitTime.toEpochMilli()) { a, b -> min(a as Long, b as Long) }
             (workflow.tasks as MutableSet<Task>).add(task)
         }

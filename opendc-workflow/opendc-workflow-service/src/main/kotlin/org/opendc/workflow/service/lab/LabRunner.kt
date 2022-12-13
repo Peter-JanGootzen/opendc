@@ -69,6 +69,7 @@ import org.opendc.workflow.service.scheduler.task.RandomTaskOrderPolicy
 import java.io.File
 import java.time.Clock
 import java.time.Duration
+import java.time.Instant
 import java.util.Random
 import java.util.UUID
 import kotlin.math.min
@@ -124,7 +125,7 @@ public class LabRunner(
 
             val service = provisioner.registry.resolve(workflowDomain, WorkflowService::class.java)!!
 
-            service.replay(clock, scenario.workload.source.toJobs())
+            service.replay(clock, scenario.workload.source.toJobs(Instant.ofEpochSecond(500)))
         }
         monitor.show("testTrace", outPath)
     }
