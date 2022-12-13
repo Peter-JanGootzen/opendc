@@ -81,6 +81,7 @@ public fun Trace.toJobs(): List<Job> {
                 HashSet(),
                 mutableMapOf(
                     "workload" to workload,
+                    "workload_flops" to flops,
                     WORKFLOW_TASK_CORES to grantedCpus,
                     WORKFLOW_TASK_DEADLINE to runtime.toMillis()
                 )
