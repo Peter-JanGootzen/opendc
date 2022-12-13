@@ -30,6 +30,7 @@ import java.util.UUID
 
 public const val HOSTSPEC_NORMALIZEDSPEED: String = "hostspec:normalizedSpeed"
 public const val HOSTSPEC_POWEREFFICIENCY: String = "hostspec:powerEfficiency"
+public const val HOSTSPEC_FASTESTFREQ: String = "hostspec:fastestFreq"
 
 /**
  * Description of a physical host that will be simulated by OpenDC and host the virtual machines.

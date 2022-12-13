@@ -24,6 +24,7 @@ package org.opendc.experiments.compute
 
 import org.opendc.compute.service.ComputeService
 import org.opendc.compute.simulator.SimHost
+import org.opendc.experiments.compute.topology.HOSTSPEC_FASTESTFREQ
 import org.opendc.experiments.compute.topology.HOSTSPEC_NORMALIZEDSPEED
 import org.opendc.experiments.compute.topology.HOSTSPEC_POWEREFFICIENCY
 import org.opendc.experiments.compute.topology.HostSpec
@@ -60,6 +61,7 @@ public class HostsProvisioningStep internal constructor(
                 val tdp = spec.model.cpus.sumOf { it.tdp }
                 spec.meta[HOSTSPEC_POWEREFFICIENCY] = tdp / spec.model.cpus.size * normalizedSpeed
                 spec.meta[HOSTSPEC_NORMALIZEDSPEED] = normalizedSpeed
+                spec.meta[HOSTSPEC_FASTESTFREQ] = this
             }
         }
 
