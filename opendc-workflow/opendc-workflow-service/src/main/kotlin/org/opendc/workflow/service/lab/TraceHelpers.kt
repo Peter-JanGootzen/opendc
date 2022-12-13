@@ -79,7 +79,7 @@ public fun Trace.toJobs(): List<Job> {
                 UUID(0L, id),
                 "<unnamed>",
                 HashSet(),
-                mapOf(
+                mutableMapOf(
                     "workload" to workload,
                     WORKFLOW_TASK_CORES to grantedCpus,
                     WORKFLOW_TASK_DEADLINE to runtime.toMillis()

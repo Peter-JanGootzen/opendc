@@ -116,9 +116,9 @@ public class TaskFlowScheduler(
             }
         })
 
-        if (sorted.isEmpty()) {
-            println("[WARN] The filters excluded all hosts in the TaskFlowScheduler.")
-        }
+//        if (sorted.isEmpty()) {
+//            println("[WARN] The filters excluded all hosts in the TaskFlowScheduler.")
+//        }
 
         // Choose the host that is the most efficient and capable of executing the task in time.
         for (host in sorted) {

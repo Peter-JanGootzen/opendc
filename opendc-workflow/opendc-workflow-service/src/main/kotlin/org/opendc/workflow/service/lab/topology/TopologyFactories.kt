@@ -90,7 +90,7 @@ private fun ClusterSpec.toHostSpecs(random: Random, powerModel: CpuPowerModel): 
         HostSpec(
             UUID(random.nextLong(), it.toLong()),
             "node-$name-$it",
-            mapOf("cluster" to id),
+            mutableMapOf("cluster" to id),
             machineModel,
             SimPsuFactories.simple(powerModel)
         )
