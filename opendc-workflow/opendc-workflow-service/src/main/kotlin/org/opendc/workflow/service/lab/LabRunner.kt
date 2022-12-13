@@ -171,6 +171,7 @@ class TestComputeMonitor : ComputeMonitor {
     var cpuUsage = 0.0
     var cpuDemand = 0.0
     var cpuUtilization: List<Double> = listOf()
+    var guestsRunning: List<Int> = listOf()
 
     override fun record(reader: HostTableReader) {
         idleTime += reader.cpuIdleTime
@@ -185,6 +186,7 @@ class TestComputeMonitor : ComputeMonitor {
         cpuUsage += reader.cpuUsage
         cpuDemand += reader.cpuDemand
         cpuUtilization += reader.cpuUtilization
+        guestsRunning += reader.guestsRunning
     }
 
     var serverCpuLimit = 0.0
@@ -228,6 +230,7 @@ class TestComputeMonitor : ComputeMonitor {
             "host; cpuLimit; ${cpuLimit}; MHz\n" +
             "host; cpuDemand; ${cpuDemand}; MHz\n" +
             "host; cpuUtilization; ${cpuUtilization}; %\n" +
+            "host; guestsRunning; ${guestsRunning};\n" +
             "service; attemptsSuccess; ${attemptsSuccess};\n" +
             "service; attemptsFailure; ${attemptsFailure};\n" +
             "service; attemptsError; ${attemptsError};\n" +
