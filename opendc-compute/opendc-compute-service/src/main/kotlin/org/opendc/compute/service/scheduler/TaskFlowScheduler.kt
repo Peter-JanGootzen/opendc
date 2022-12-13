@@ -99,12 +99,9 @@ public class TaskFlowScheduler(
         // We know the amount of FLOPs for the task. This is the total amount of FLOPs, so we can divide by the core count.
         val flopWorkload = server.meta.getOrDefault(TASK_WORKLOAD, 0L) as Long;
 
-
-        // TODO:
-        //   - Filter hosts by cores available -done
-        //   - Filter hosts by memory available -done
-        //   - Somehow get the performance/watt for every machine -done
-        //   - Provision on the most power efficient host that we can manage given the slack
+        // Filter the hosts according to the requirements of the task.
+        // TODO: Currently the CPU filter filters out all available hosts as we do not overprovision.
+        //       We might need to either overprovision or do something else.
         var filteredHosts1: MutableList<HostView> = hosts
         var filteredHosts2 = filteredHosts1.filter { host -> (host.host.model.cpuCount - host.provisionedCores) > cpuDemand }
         var filteredHosts3 = filteredHosts2.filter { host -> (host.availableMemory) > ramDemand }
