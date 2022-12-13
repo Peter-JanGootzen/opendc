@@ -264,7 +264,7 @@ public class OpenDCRunner(
                 provisioner.runSteps(
                     setupComputeService(
                         serviceDomain,
-                        { createComputeScheduler(scenario.schedulerName, Random(it.seeder.nextLong())) }
+                        { createComputeScheduler(scenario.schedulerName, Random(it.seeder.nextLong()), clock) }
                     ),
                     registerComputeMonitor(serviceDomain, monitor),
                     setupHosts(serviceDomain, topology)

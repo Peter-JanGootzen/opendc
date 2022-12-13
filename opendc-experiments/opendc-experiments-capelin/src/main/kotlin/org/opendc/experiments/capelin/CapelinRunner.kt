@@ -66,7 +66,7 @@ public class CapelinRunner(
 
         Provisioner(coroutineContext, clock, seed).use { provisioner ->
             provisioner.runSteps(
-                setupComputeService(serviceDomain, { createComputeScheduler(scenario.allocationPolicy, Random(it.seeder.nextLong())) }),
+                setupComputeService(serviceDomain, { createComputeScheduler(scenario.allocationPolicy, Random(it.seeder.nextLong()), clock) }),
                 setupHosts(serviceDomain, topology, optimize = true)
             )
 
