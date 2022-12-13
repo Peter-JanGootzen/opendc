@@ -20,23 +20,21 @@
  * SOFTWARE.
  */
 
-@file:JvmName("WorkflowSteps")
+package org.opendc.workflow.service.lab
 
-package org.opendc.experiments.workflow
-
-import org.opendc.experiments.provisioner.ProvisioningStep
-import org.opendc.workflow.service.WorkflowService
+import org.opendc.workflow.service.scheduler.job.JobAdmissionPolicy
+import org.opendc.workflow.service.scheduler.job.JobOrderPolicy
+import org.opendc.workflow.service.scheduler.task.TaskEligibilityPolicy
+import org.opendc.workflow.service.scheduler.task.TaskOrderPolicy
 import java.time.Duration
 
 /**
- * Return a [ProvisioningStep] that sets up a [WorkflowService].
+ * Specification of the scheduling policies of the workflow scheduler.
  */
-public fun setupWorkflowService(
-    serviceDomain: String,
-    computeService: String,
-    scheduler: WorkflowSchedulerSpec,
-    schedulingQuantum: Duration = Duration.ofMinutes(5)
-): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
-    return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
-}
+public data class WorkflowSchedulerSpec(
+    val schedulingQuantum: Duration,
+    val jobAdmissionPolicy: JobAdmissionPolicy,
+    val jobOrderPolicy: JobOrderPolicy,
+    val taskEligibilityPolicy: TaskEligibilityPolicy,
+    val taskOrderPolicy: TaskOrderPolicy
+)

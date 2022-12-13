@@ -24,7 +24,11 @@ description = "Workflow orchestration service for OpenDC"
 
 /* Build configuration */
 plugins {
-    `kotlin-library-conventions`
+    `kotlin-conventions`
+    `testing-conventions`
+    `jacoco-conventions`
+    `benchmark-conventions`
+    distribution
 }
 
 dependencies {
@@ -33,11 +37,25 @@ dependencies {
     implementation(projects.opendcCommon)
     implementation(libs.kotlin.logging)
 
+    api(projects.opendcExperiments.opendcExperimentsCompute)
+
+    implementation(projects.opendcSimulator.opendcSimulatorCore)
+    implementation(projects.opendcSimulator.opendcSimulatorCompute)
+    implementation(projects.opendcCompute.opendcComputeSimulator)
+
+    implementation(libs.clikt)
+    implementation(libs.progressbar)
+    implementation(libs.kotlin.logging)
+    implementation(libs.jackson.dataformat.csv)
+    implementation(projects.opendcTrace.opendcTraceGwf)
+
+
     testImplementation(projects.opendcSimulator.opendcSimulatorCore)
     testImplementation(projects.opendcExperiments.opendcExperimentsCompute)
     testImplementation(projects.opendcExperiments.opendcExperimentsWorkflow)
-    testImplementation(projects.opendcTrace.opendcTraceApi)
-    testRuntimeOnly(projects.opendcTrace.opendcTraceGwf)
+//    testImplementation(projects.opendcTrace.opendcTraceApi)
+//    testRuntimeOnly(projects.opendcTrace.opendcTraceGwf)
+    runtimeOnly(projects.opendcTrace.opendcTraceOpendc)
     testRuntimeOnly(libs.log4j.core)
     testRuntimeOnly(libs.log4j.slf4j)
 }

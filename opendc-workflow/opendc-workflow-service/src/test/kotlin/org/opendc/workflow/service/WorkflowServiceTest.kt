@@ -53,6 +53,7 @@ import org.opendc.trace.Trace
 import org.opendc.workflow.service.scheduler.job.NullJobAdmissionPolicy
 import org.opendc.workflow.service.scheduler.job.SubmissionTimeJobOrderPolicy
 import org.opendc.workflow.service.scheduler.task.NullTaskEligibilityPolicy
+import org.opendc.workflow.service.scheduler.task.RandomTaskOrderPolicy
 import org.opendc.workflow.service.scheduler.task.SubmissionTimeTaskOrderPolicy
 import org.opendc.workflow.service.scheduler.task.TaskFlowTaskEligibilityPolicy
 import java.nio.file.Paths

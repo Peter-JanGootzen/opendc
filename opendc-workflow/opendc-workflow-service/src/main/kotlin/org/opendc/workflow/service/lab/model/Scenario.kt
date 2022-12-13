@@ -20,23 +20,31 @@
  * SOFTWARE.
  */
 
-@file:JvmName("WorkflowSteps")
+package org.opendc.workflow.service.lab.model
 
-package org.opendc.experiments.workflow
-
-import org.opendc.experiments.provisioner.ProvisioningStep
-import org.opendc.workflow.service.WorkflowService
+import org.opendc.workflow.service.scheduler.job.JobAdmissionPolicy
+import org.opendc.workflow.service.scheduler.job.JobOrderPolicy
+import org.opendc.workflow.service.scheduler.task.TaskOrderPolicy
+import org.opendc.workflow.service.scheduler.task.TaskEligibilityPolicy
 import java.time.Duration
 
 /**
- * Return a [ProvisioningStep] that sets up a [WorkflowService].
+ * A single scenario of a portfolio.
+ *
+ * @property topology The topology to test.
+ * @property workload The workload to test.
+ * @property operationalPhenomena The [OperationalPhenomena] to model.
+ * @property allocationPolicy The allocation policy of the scheduler.
+ * @property partitions The partition of the scenario.
  */
-public fun setupWorkflowService(
-    serviceDomain: String,
-    computeService: String,
-    scheduler: WorkflowSchedulerSpec,
-    schedulingQuantum: Duration = Duration.ofMinutes(5)
-): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
-    return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
-}
+public data class Scenario(
+    val topology: Topology,
+    val workload: Workload,
+    val schedQuantum: Duration,
+    val jobAdmissionPolicy: JobAdmissionPolicy,
+    val jobOrderPolicy: JobOrderPolicy,
+    val taskEligibilityPolicy: TaskEligibilityPolicy,
+    val taskOrderPolicy: TaskOrderPolicy,
+    val allocationPolicy: String,
+    val operationalPhenomena: OperationalPhenomena,
+)

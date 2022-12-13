@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 AtLarge Research
+ * Copyright (c) 2021 AtLarge Research
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,27 @@
  * SOFTWARE.
  */
 
-@file:JvmName("WorkflowSteps")
-
-package org.opendc.experiments.workflow
-
-import org.opendc.experiments.provisioner.ProvisioningStep
-import org.opendc.workflow.service.WorkflowService
-import java.time.Duration
+package org.opendc.workflow.service.lab.topology
 
 /**
- * Return a [ProvisioningStep] that sets up a [WorkflowService].
+ * Definition of a compute cluster modeled in the simulation.
+ *
+ * @param id A unique identifier representing the compute cluster.
+ * @param name The name of the cluster.
+ * @param cpuCount The total number of CPUs in the cluster.
+ * @param cpuSpeed The speed of a CPU in the cluster in MHz.
+ * @param memCapacity The total memory capacity of the cluster (in MiB).
+ * @param hostCount The number of hosts in the cluster.
+ * @param memCapacityPerHost The memory capacity per host in the cluster (MiB).
+ * @param cpuCountPerHost The number of CPUs per host in the cluster.
  */
-public fun setupWorkflowService(
-    serviceDomain: String,
-    computeService: String,
-    scheduler: WorkflowSchedulerSpec,
-    schedulingQuantum: Duration = Duration.ofMinutes(5)
-): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
-    return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
-}
+public data class ClusterSpec(
+    val id: String,
+    val name: String,
+    val cpuCount: Int,
+    val cpuSpeed: Double,
+    val memCapacity: Double,
+    val hostCount: Int,
+    val memCapacityPerHost: Double,
+    val cpuCountPerHost: Int
+)

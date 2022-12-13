@@ -22,7 +22,7 @@
 
 @file:JvmName("WorkflowSteps")
 
-package org.opendc.experiments.workflow
+package org.opendc.workflow.service.lab
 
 import org.opendc.experiments.provisioner.ProvisioningStep
 import org.opendc.workflow.service.WorkflowService
