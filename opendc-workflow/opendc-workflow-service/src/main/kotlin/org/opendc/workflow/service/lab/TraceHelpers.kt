@@ -69,7 +69,7 @@ public fun Trace.toJobs(submitTimeLimit: Instant = Instant.MAX): List<Job> {
 
             val id = reader.getString(TASK_ID)!!.toLong()
             val uid = UUID(0L, id)
-            val grantedCpus = if (reader.resolve(TASK_ALLOC_NCPUS) != 0) {
+            val grantedCpus = if (reader.resolve(TASK_ALLOC_NCPUS) != -1) {
                 reader.getInt(TASK_ALLOC_NCPUS)
             } else {
                 reader.getInt(TASK_REQ_NCPUS)
