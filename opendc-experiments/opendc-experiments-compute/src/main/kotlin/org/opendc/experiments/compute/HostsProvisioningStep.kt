@@ -58,7 +58,20 @@ public class HostsProvisioningStep internal constructor(
             for (spec in specs) {
                 val freq = spec.model.cpus.sumOf {it.frequency} / spec.model.cpus.size
                 val normalizedSpeed = freq / this
-                val tdp = spec.model.cpus.sumOf { it.tdp }
+                var tdp = spec.model.cpus.sumOf { it.tdp }
+
+                // Set the TDP when it isn't given ini the topology.txt
+                // - node-a01 is middle of the pack with many cores
+                // - node-c01 is half the cores of a and less efficient
+                // - node-b01 is half of half the core and more efficient
+                if (spec.name.contains("node-A01")) {
+                    tdp = 480
+                } else if (spec.name.contains("node-B01")) {
+                    tdp = 300
+                } else if (spec.name.contains("node-C01")) {
+                    tdp = 100
+                }
+
                 spec.meta[HOSTSPEC_POWEREFFICIENCY] = tdp / spec.model.cpus.size * normalizedSpeed
                 spec.meta[HOSTSPEC_NORMALIZEDSPEED] = normalizedSpeed
                 spec.meta[HOSTSPEC_FASTESTFREQ] = this
