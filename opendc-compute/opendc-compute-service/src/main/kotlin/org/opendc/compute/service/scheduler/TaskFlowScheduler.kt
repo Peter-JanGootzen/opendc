@@ -26,6 +26,7 @@ import org.opendc.compute.api.Server
 import org.opendc.compute.service.internal.HostView
 import java.time.Clock
 import java.util.Random
+import kotlin.math.min
 
 /**
  * A [ComputeScheduler] implementation that uses filtering and weighing passes to select
@@ -95,8 +96,6 @@ public class TaskFlowScheduler(
         val flopWorkload = server.meta[TASK_WORKLOAD] as Long
 
         // Filter the hosts according to the requirements of the task.
-        // TODO: Currently the CPU filter filters out all available hosts as we do not overprovision.
-        //       We might need to either overprovision or do something else.
         val filteredHosts1: MutableList<HostView> = hosts
         val filteredHosts2 = filteredHosts1.filter { host -> (host.host.model.cpuCount - host.provisionedCores) > cpuDemand }
         val filteredHosts3 = filteredHosts2.filter { host -> (host.availableMemory) > ramDemand }
@@ -111,10 +110,6 @@ public class TaskFlowScheduler(
             }
         }
 
-//        if (sorted.isEmpty()) {
-//            println("[WARN] The filters excluded all hosts in the TaskFlowScheduler.")
-//        }
-
         // Choose the host that is the most efficient and capable of executing the task in time.
         for (host in sorted) {
             // Assume one FLOP per cycle. Default value is not used.
@@ -124,20 +119,16 @@ public class TaskFlowScheduler(
             val expectedRuntime = normalRuntime /  normalizedSpeed
 
             // Task fits, so we select this host.
-            if (expectedRuntime < normalRuntime + slack) {
+            if (expectedRuntime <= normalRuntime + slack) {
                 return host
             }
         }
 
-        // If we get here, we just run on the first host available. This prevents jobs from not being scheduled.
-        if (sorted.isNotEmpty()) {
-            return sorted.last()
+        // If we get here, there is no best host, so return one at random.
+        return when (val maxSize = sorted.size) {
+            0 -> null
+            1 -> sorted[0]
+            else -> sorted[random.nextInt(maxSize)]
         }
-
-        if (hosts.isNotEmpty()) {
-            return hosts.first()
-        }
-
-        return null
     }
 }

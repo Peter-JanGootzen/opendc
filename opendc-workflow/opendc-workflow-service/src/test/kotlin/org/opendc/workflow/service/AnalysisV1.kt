@@ -95,7 +95,7 @@ internal class AnalysisV1 {
     @Test
     fun testRunner() {
         val envPath = File("src/test/resources/env")
-        val outPath = "results_monitor3.csv"
+        val outPath = "results_monitor.csv"
         val trace = Trace.open(
             Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
             format = "gwf"
