@@ -126,7 +126,7 @@ internal class AnalysisV1 {
     @Test
     fun testExperiments() {
         val envPath = File("src/test/resources/env")
-        // Define experiment as list [name, file, format, topology]
+        // Define experiment as list [name, file, format, topology, computeScheduler]
         val experiments = listOf(listOf("pegasus", "/pegasus", "wtf", "topology", "taskflow"), listOf("pegasus7", "/pegasus7", "wtf", "topology", "taskflow"), listOf("default", "/trace.gwf", "gwf", "topology", "taskflow"))
         val repeats = 1
 
