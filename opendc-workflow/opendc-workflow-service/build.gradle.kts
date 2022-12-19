@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.kotlin.logging)
     implementation(libs.jackson.dataformat.csv)
     implementation(projects.opendcTrace.opendcTraceGwf)
+    implementation(projects.opendcTrace.opendcTraceWtf)
 
 
     testImplementation(projects.opendcSimulator.opendcSimulatorCore)
