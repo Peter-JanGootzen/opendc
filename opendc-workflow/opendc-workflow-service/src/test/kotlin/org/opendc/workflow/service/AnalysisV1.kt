@@ -66,6 +66,7 @@ import org.opendc.simulator.compute.power.CpuPowerModel
 import org.opendc.simulator.compute.power.CpuPowerModels
 import org.opendc.simulator.flow2.mux.FlowMultiplexerFactory
 import org.opendc.simulator.kotlin.runSimulation
+import org.opendc.trace.TableColumnType
 import org.opendc.trace.Trace
 import org.opendc.workflow.service.scheduler.job.LimitJobAdmissionPolicy
 import org.opendc.workflow.service.scheduler.job.NullJobAdmissionPolicy
@@ -121,4 +122,50 @@ internal class AnalysisV1 {
             assertDoesNotThrow {runner.runScenario(scenario, seed + i.toLong(), i)}
         }
     }
+
+    @Test
+    fun testExperiments() {
+        val envPath = File("src/test/resources/env")
+        // Define experiment as list [name, file, format, topology]
+        val experiments = listOf(listOf("pegasus", "/pegasus", "wtf", "topology", "taskflow"), listOf("pegasus7", "/pegasus7", "wtf", "topology", "taskflow"), listOf("default", "/trace.gwf", "gwf", "topology", "taskflow"))
+        val repeats = 1
+
+        for (experiment in experiments) {
+            val experimentName = experiment[0]
+            val tracePath = experiment[1]
+            val traceFormat = experiment[2]
+            val experimentTopology = experiment[3]
+            val experimentScheduler = experiment[4]
+
+            val trace = Trace.open(
+                Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource(tracePath)).toURI()),
+                format = traceFormat
+            )
+
+            val resultPath = "results/${experimentName}/${experimentScheduler}"
+            Files.createDirectories(Paths.get(resultPath))
+            val runner = LabRunner(envPath, "${resultPath}/${experimentTopology}.csv")
+
+            val scenario = Scenario(
+                Topology(experimentTopology),
+                Workload(experimentName, trace),
+                Duration.ofMillis(100),
+                NullJobAdmissionPolicy,
+                SubmissionTimeJobOrderPolicy(),
+                NullTaskEligibilityPolicy, // TaskFlowTaskEligibilityPolicy(clock),
+                SubmissionTimeTaskOrderPolicy(), // RandomTaskOrderPolicy
+                experimentScheduler, // From a predefined list of computescheduler policies. Custom can be defined there
+                OperationalPhenomena(failureFrequency = 24.0 * 7, hasInterference = true),
+            )
+
+            val seed = 0L
+
+            for (i in 0 until repeats) {
+                assertDoesNotThrow {runner.runScenario(scenario, seed + i.toLong(), i)}
+            }
+        }
+
+
+    }
+
 }
