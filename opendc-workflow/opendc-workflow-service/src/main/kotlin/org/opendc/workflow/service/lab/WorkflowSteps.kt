@@ -37,6 +37,5 @@ public fun setupWorkflowService(
     scheduler: WorkflowSchedulerSpec,
     schedulingQuantum: Duration = Duration.ofMinutes(5)
 ): ProvisioningStep {
-    println("I AM DOING STUFF YEAAAAH 1")
     return WorkflowServiceProvisioningStep(serviceDomain, computeService, scheduler, schedulingQuantum)
 }

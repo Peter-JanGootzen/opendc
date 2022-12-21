@@ -125,9 +125,11 @@ public class LabRunner(
 
             val service = provisioner.registry.resolve(workflowDomain, WorkflowService::class.java)!!
 
-            service.replay(clock, scenario.workload.source.toJobs(Instant.ofEpochSecond(500)))
+            service.replay(clock, scenario.workload.source.toJobs())
         }
-        monitor.show("testTrace", outPath)
+
+//        monitor.show()
+        monitor.toFile(outPath)
     }
 }
 
@@ -189,11 +191,7 @@ class TestComputeMonitor : ComputeMonitor {
     var serverCpuLostTime = 0L
     var sysUptime = 0L
     var sysDowntime = 0L
-    var serverProvisionTime = ""
-    var sysBootTime = ""
     var timestamp = ""
-    var serverInfo: List<ServerInfo?> = listOf()
-    var hostInfo: List<HostInfo?> = listOf()
 
     override fun record(reader: ServerTableReader) {
         sysUptime += reader.uptime
@@ -203,14 +201,9 @@ class TestComputeMonitor : ComputeMonitor {
         serverCpuIdleTime += reader.cpuIdleTime
         serverCpuStealTime += reader.cpuStealTime
         serverCpuLostTime += reader.cpuLostTime
-//        serverProvisionTime = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss").format(LocalDateTime.ofInstant(reader.provisionTime, ZoneOffset.UTC))
-//        sysBootTime = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss").format(LocalDateTime.ofInstant(reader.bootTime, ZoneOffset.UTC))
-//        timestamp = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss").format(LocalDateTime.ofInstant(reader.timestamp, ZoneOffset.UTC))
-//        serverInfo += reader.server
-//        hostInfo += reader.host
     }
 
-    fun show(title: String, fPath: String="") {
+    fun getContents(): String {
         var metrics: String = "monitor; metric; value; unit\n" +
             "host; idleTime; ${idleTime}; seconds\n" +
             "host; activeTime; ${activeTime}; seconds\n" +
@@ -239,8 +232,14 @@ class TestComputeMonitor : ComputeMonitor {
             "server; cpuLostTime; ${serverCpuLostTime}; seconds\n" +
             "server; sysUptime; ${sysUptime}; ms\n" +
             "server; sysDowntime; ${sysDowntime}; ms\n"
+        return metrics
+    }
 
-        println(metrics)
-        if (fPath != "") { File(fPath).printWriter().use { out -> out.println(metrics) } }
+    fun show() {
+        println(getContents())
+    }
+
+    fun toFile(fPath: String="") {
+        File(fPath).printWriter().use { out -> out.println(getContents()) }
     }
 }

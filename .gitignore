@@ -115,3 +115,8 @@ gradle-app.setting
 
 # Cache of project
 .gradletasknamecache
+
+# Exclude figures
+*.pdf
+*.png
+*.jpg

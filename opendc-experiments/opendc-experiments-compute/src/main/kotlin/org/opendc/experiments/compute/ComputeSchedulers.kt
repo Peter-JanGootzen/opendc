@@ -45,7 +45,7 @@ public fun createComputeScheduler(name: String, seeder: Random, clock : Clock, p
     val cpuAllocationRatio = 16.0
     val ramAllocationRatio = 1.5
     return when (name) {
-        "lab1" -> FilterScheduler(
+        "naive" -> FilterScheduler(
             filters = listOf(ComputeFilter(), VCpuFilter(1.0), RamFilter(1.0)),
             weighers = listOf(VCpuWeigher(1.0, multiplier = 1.0))
         )

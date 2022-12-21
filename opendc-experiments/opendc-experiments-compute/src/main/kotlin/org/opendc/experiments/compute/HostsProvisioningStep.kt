@@ -60,10 +60,10 @@ public class HostsProvisioningStep internal constructor(
                 val normalizedSpeed = freq / this
                 var tdp = spec.model.cpus.sumOf { it.tdp }
 
-                // Set the TDP when it isn't given ini the topology.txt
-                // - node-a01 is middle of the pack with many cores
-                // - node-c01 is half the cores of a and less efficient
-                // - node-b01 is half of half the core and more efficient
+                // Set the TDP when it isn't given in the topology.txt
+                // - node-A01 is middle of the pack with many cores
+                // - node-B01 is half the cores of A and less efficient
+                // - node-C01 is half of half the core and more efficient
                 if (spec.name.contains("node-A01")) {
                     tdp = 480
                 } else if (spec.name.contains("node-B01")) {

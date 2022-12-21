@@ -93,12 +93,12 @@ import kotlin.random.Random
  */
 @DisplayName("Analysis")
 internal class AnalysisV1 {
-    @Test
+//    @Test
     fun testRunner() {
         val envPath = File("src/test/resources/env")
         val outPath = "results_monitor.csv"
         val trace = Trace.open(
-            Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/trace.gwf")).toURI()),
+            Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource("/askalon_ee.gwf")).toURI()),
             format = "gwf"
         )
 
@@ -127,21 +127,25 @@ internal class AnalysisV1 {
     fun testExperiments() {
         val envPath = File("src/test/resources/env")
         // Define experiment as list [name, file, format, topology, computeScheduler]
-        val experiments = listOf(listOf("pegasus", "/pegasus", "wtf", "topology", "taskflow"), listOf("pegasus7", "/pegasus7", "wtf", "topology", "taskflow"), listOf("default", "/trace.gwf", "gwf", "topology", "taskflow"))
+        val experiments = listOf(
+            listOf("askalon_ee", "/askalon_ee.gwf", "gwf", "heterogeneous", "naive"),
+            listOf("askalon_ee", "/askalon_ee.gwf", "gwf", "heterogeneous", "random"),
+            listOf("askalon_ee", "/askalon_ee.gwf", "gwf", "heterogeneous", "taskflow"),
+            listOf("askalon_ee", "/askalon_ee.gwf", "gwf", "homogeneous", "taskflow"),
+            listOf("Pegasus_P1_parquet", "/Pegasus_P1_parquet", "wtf", "heterogeneous", "taskflow"),
+            listOf("Pegasus_P7_parquet", "/Pegasus_P7_parquet", "wtf", "heterogeneous", "taskflow"),
+        )
         val repeats = 1
-
         for (experiment in experiments) {
             val experimentName = experiment[0]
             val tracePath = experiment[1]
             val traceFormat = experiment[2]
             val experimentTopology = experiment[3]
             val experimentScheduler = experiment[4]
-
             val trace = Trace.open(
                 Paths.get(checkNotNull(WorkflowServiceTest::class.java.getResource(tracePath)).toURI()),
                 format = traceFormat
             )
-
             val resultPath = "results/${experimentName}/${experimentScheduler}"
             Files.createDirectories(Paths.get(resultPath))
             val runner = LabRunner(envPath, "${resultPath}/${experimentTopology}.csv")
